@@ -32,9 +32,22 @@ class BaseColumn(object):
         self.input_pop    = None
         self.output_pop   = None
         self.feedback_pop = None
+        
+        ### input and intra connections
+        self.input_conns = None
+        self.intra_conns = None
+
+        self.in_indices = None
+        self.in_weights = None
 
 
     def get_map_params(self, k):
+
+        width  = self.lgn.pop_width(k)
+        height = self.lgn.pop_height(k)
+        step   = self.lgn.sample_step(k)
+        start  = self.lgn.sample_start(k)
+
         if k == 'cs4':
             kk = 'cs_quart'
         elif k == 'cs2':
@@ -42,17 +55,13 @@ class BaseColumn(object):
         else:
             kk = k
         
-        width  = self.lgn.pop_width(k)
-        height = self.lgn.pop_height(k)
-        step   = self.lgn.sample_step(k)
-        start  = self.lgn.sample_start(k)
-        
         if 'dir' not in kk:
             krn_width = self.retina.cfg[kk]['width']        
         else:
             krn_width = 0
 
         return step, start, width, height, krn_width
+
 
     def get_row_col_limits(self, half_krn_width):
         #location is in highest resolution scale (i.e. 'ctr_srr')
@@ -82,26 +91,33 @@ class BaseColumn(object):
             half_krn_w = max(krn_width//2, half_rec_w)
             frm, to = self.get_row_col_limits(half_krn_w)
             sanity.clear()
+            
             for r in range(frm[ROW], to[ROW]): #r in full resolution space
                 ssmp_r = subsamp_size(start, r, step)
+                if ssmp_r >= height: ### too large for lgn dimension
+                    continue
+                    
                 if ssmp_r not in sanity:
                     sanity[ssmp_r] = []
                     
                 for c in range(frm[COL], to[COL]): #c in full resolution space
                     ssmp_c = subsamp_size(start, c, step)
-                    # print(ssmp_r, ssmp_c)
+
+                    if ssmp_c >= width: ### too large for lgn dimension
+                        continue
+
                     if ssmp_c in sanity[ssmp_r]:
                         continue
                     
                     src = int(ssmp_r*width + ssmp_c) # in subsample space (lgn pop)
-                    print("%d*%d + %d = %d"%(ssmp_r, width, ssmp_c, src))
+
                     d = np.sqrt( (my_r - r)**2 + (my_c - c)**2 )#in full resolution
                     w = self.in_weight_func(d)
 
                     if w < cfg['min_scale_weight']:
-                        # print("dist %s, weight %s"%(d, w))
                         continue
                     
+                    # print_debug(("%d*%d + %d = %d"%(ssmp_r, width, ssmp_c, src), w))
                     sanity[ssmp_r].append(ssmp_c)                        
                     indices[k].append( src )
                     weights[k].append( np.abs(w) )
@@ -138,11 +154,12 @@ class BaseColumn(object):
     
     @staticmethod
     def conn_list_to_array(conns, pre_size, post_size):
-        ws = np.inf*np.ones((pre_size, post_size))
-        print_debug( (pre_size, post_size) )
+        ws = np.nan*np.ones((pre_size, post_size))
+        
         for c in conns:
-            print_debug(c)
-            # ws[c[0], c[1]] = c[2]
+            # print_debug(c)
+            ws[c[0], c[1]] = c[2]
+
         return ws
 
     @abc.abstractmethod

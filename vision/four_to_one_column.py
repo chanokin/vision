@@ -175,7 +175,12 @@ class V1FourToOneColumn(BaseColumn):
                 src, dst, dst_lyr = self.decode_conn_key(lyr, conn)
                 tgt = 'excitatory' if src == 'exc' else 'inhibitory'
                 flc = sim.FromListConnector(self.intra_conns[lyr][conn])
-                syn_dyn = self.get_synapse_dynamics()
+                if src == 'inh' or dst == 'inh':
+                    # print('inhibitory projection %s, %s'%(lyr, conn))
+                    syn_dyn = None
+                else:
+                    syn_dyn = self.get_synapse_dynamics()
+
                 proj = sim.Projection(self.pops[lyr][src], 
                                       self.pops[dst_lyr][dst],
                                       flc, target=tgt,
@@ -208,9 +213,6 @@ class V1FourToOneColumn(BaseColumn):
             ws[ch] = {}
             for pop in self.input_conns[ch]:
                 ws[ch][pop] = {}
-                print("============================================")
-                print("BEFORE simulation!")
-                print("%s CHANNEL --- %s POPULATION"%(ch, pop))
 
                 for cn_k in self.input_conns[ch][pop]:
                     dst_lyr, dst_pop = self.decode_in_conn_key(cn_k)
@@ -232,14 +234,11 @@ class V1FourToOneColumn(BaseColumn):
                 ws[ch] = {}
                 for pop in self.input_projs[ch]:
                     ws[ch][pop] = {}
-                    print("============================================")
-                    print("after simulation!")
-                    print("%s CHANNEL --- %s POPULATION"%(ch, pop))
-                    
+
                     for cn_k in self.input_projs[ch][pop]:
                         w = self.input_projs[ch][pop][cn_k].\
                                               getWeights(format='array')
-                        ws[ch][pop][cn_k] = w
+                        ws[ch][pop][cn_k] = np.array(w)
             return ws
 
     def connect_unit_to(self, unit):
