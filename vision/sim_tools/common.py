@@ -1,17 +1,6 @@
 from __future__ import print_function
 import numpy as np
-import pylab as plt
-import time
-import random
-
-from pyNN.random import NumpyRNG, RandomDistribution
-from pyNN.utility import Timer
-
-import copy
 import sys
-import pickle
-import glob
-import os
 
 DEBUG = True
 
