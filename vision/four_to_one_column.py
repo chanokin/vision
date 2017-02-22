@@ -69,6 +69,7 @@ class V1FourToOneColumn(BaseColumn):
         
     def build_intra_conns(self):
         cfg = self.cfg
+        sim = self.sim
         prob_conn = conn_std.probability_connector
         inner_conns = {}
         for lyr in self.column_conn_prob:
@@ -78,13 +79,20 @@ class V1FourToOneColumn(BaseColumn):
                     continue
                 
                 src, dst, dst_lyr = self.decode_conn_key(lyr, conn)
-                weight = self.column_conn_wgt[lyr][conn]
+                max_weight = self.column_conn_wgt[lyr][conn]
+                min_weight = self.min_weight
                 prob = self.column_conn_prob[lyr][conn]
                 delay = cfg['min_delay']
-                conns = prob_conn(self.pop_sizes[lyr][src],
-                                  self.pop_sizes[dst_lyr][dst],
-                                  prob, weight, delay,
-                                  weight_std_dev=1.)
+                rng = sim.NumpyRNG(seed=None)
+                w_dist = sim.RandomDistribution('uniform', 
+                                                [min_weight, max_weight],
+                                                rng=rng)
+                conns = sim.FixedProbabilityConnector(prob, weights=w_dist,
+                                                      delays=delay)
+                # conns = prob_conn(self.pop_sizes[lyr][src],
+                                  # self.pop_sizes[dst_lyr][dst],
+                                  # prob, weight, delay,
+                                  # weight_std_dev=1.)
 
                 inner_conns[lyr][conn] = conns
                 
@@ -93,12 +101,14 @@ class V1FourToOneColumn(BaseColumn):
 
     def build_input_conns(self):
         cfg = self.cfg
+        sim = self.sim
         list_prob_conn = conn_std.list_probability_connector
         key_to_pop = {'l4e': self.lgn.css, 'l2e': ['gabor', 'dir'],
                       'l4i': self.lgn.css, 'l5e': []}
         input_conns = {}
         dst_indices = []
         delay = cfg['input_delay']
+        
         for ch in self.lgn.channels:
             input_conns[ch] = {}
             for pop in self.lgn.output_keys():
@@ -108,15 +118,14 @@ class V1FourToOneColumn(BaseColumn):
                         dst_lyr, dst_pop = self.decode_in_conn_key(conn_key)
 
                         sign = 1 if dst_pop == 'exc' else -1
-                        weights = sign*self.in_weights[pop]
+                        weight = sign*self.in_weights[pop]
                         dst_size = self.pop_sizes[dst_lyr][dst_pop]
                         dst_indices[:] = [i for i in range(dst_size)]
                         prob = self.input_conn_prob['main'][conn_key]
                         conns = list_prob_conn(self.in_indices[pop],
                                                dst_indices, 
-                                               prob, weights, delay)
+                                               prob, weight, delay)
 
-                        input_conns[ch][pop][conn_key] = conns
         return input_conns
         
 
@@ -154,6 +163,7 @@ class V1FourToOneColumn(BaseColumn):
         self.input_pop    = self.pops['l4']['exc']
         self.output_pop   = self.pops['l2']['exc']
         self.feedback_pop = self.pops['l5']['exc']
+        self.interconnect_pop = self.pops['l2']['exc']
 
         if cfg['record']['voltages']:
             self.input_pop.record_v()
@@ -164,7 +174,8 @@ class V1FourToOneColumn(BaseColumn):
             self.input_pop.record()
             self.output_pop.record()
             self.feedback_pop.record()
-    
+
+
     def build_projections(self):
         sim = self.sim
         cfg = self.cfg
@@ -174,7 +185,9 @@ class V1FourToOneColumn(BaseColumn):
             for conn in self.intra_conns[lyr]:
                 src, dst, dst_lyr = self.decode_conn_key(lyr, conn)
                 tgt = 'excitatory' if src == 'exc' else 'inhibitory'
-                flc = sim.FromListConnector(self.intra_conns[lyr][conn])
+                # flc = sim.FromListConnector(self.intra_conns[lyr][conn])
+                flc = self.intra_conns[lyr][conn]
+                
                 if src == 'inh' or dst == 'inh':
                     # print('inhibitory projection %s, %s'%(lyr, conn))
                     syn_dyn = None
@@ -197,6 +210,7 @@ class V1FourToOneColumn(BaseColumn):
                     dst_lyr, dst_pop = self.decode_in_conn_key(conn_key)
                     conn = self.input_conns[ch][pop][conn_key]
                     flc = sim.FromListConnector(conn)
+
                     proj = sim.Projection(self.lgn.pops[ch][pop]['output'],
                                           self.pops[dst_lyr][dst_pop],
                                           flc, target='excitatory')
@@ -225,6 +239,7 @@ class V1FourToOneColumn(BaseColumn):
                                                                 post_size)
         return ws
 
+
     def get_input_weights(self, get_initial=False):
         if get_initial:
             return self.get_initial_input_weights()
@@ -241,5 +256,18 @@ class V1FourToOneColumn(BaseColumn):
                         ws[ch][pop][cn_k] = np.array(w)
             return ws
 
+
     def connect_unit_to(self, unit):
-        pass
+        sim = self.sim
+        cfg = self.cfg
+        
+        key = "%s"%unit
+        w_min = self.min_weight
+        w_max = cfg['inter_conn_weight']
+        self.inter_projs[key] = self.get_fixed_prob_proj(self.output_pop, 
+                                                         unit, 
+                                                         cfg['inter_conn_prob'], 
+                                                         w_min, w_max)
+        
+
+

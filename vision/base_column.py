@@ -39,7 +39,12 @@ class BaseColumn(object):
 
         self.in_indices = None
         self.in_weights = None
+        self.min_weight = 0.0001
+        self.inter_projs = {}
 
+
+    def __str__(self):
+        return "unit row %d, col %d"%(self.location[ROW], self.location[COL])
 
     def get_map_params(self, k):
 
@@ -151,6 +156,20 @@ class BaseColumn(object):
         syn_dyn = sim.SynapseDynamics(slow=stdp_model)
         
         return syn_dyn
+
+
+    @staticmethod
+    def get_fixed_prob_proj(src_pop, dst_pop, prob, min_weight=0., max_weight=2.):
+        lbl = "%s to %s"%(src_pop, dst_pop)
+        rng = sim.NumpyRNG(seed=None)
+        w_dist = sim.RandomDistribution('uniform', [min_weight, max_weight],
+                                        rng=rng)
+        conn = sim.FixedProbabilityConnector(cfg['inter_conn_prob'], 
+                                             weights=w_dist)
+        syn_dyn = self.get_synapse_dynamics()
+        return sim.Projection(src_pop, dst_pop, conn, label=lbl,
+                              synapse_dynamics=syn_dyn)
+
     
     @staticmethod
     def conn_list_to_array(conns, pre_size, post_size):
@@ -197,5 +216,4 @@ class BaseColumn(object):
         """how to connect a unit (column) with other units(columns)
            should return a PyNN Projection
         """
-        
         pass
