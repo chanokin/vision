@@ -481,3 +481,65 @@ def img_spikes_from_to(path, num_neurons,
         spks[nrn_id].sort()
 
     return spks
+
+
+#######################################################################
+# convert images to time
+
+def shade_to_time(img, max_shade=255., max_t_ms=12., higher_first=True, del_val=-10):
+    conv = max_t_ms/float(max_shade)
+    if higher_first:
+        times = (max_shade - img)*conv
+        times = np.round(times)
+        times[np.where(times == max_t_ms)] = del_val
+    else:
+        times = img*conv
+        times = np.round(times)
+        times[np.where(times == 0.)] = del_val
+    
+    return times
+
+# shift spike times 
+def rand_time(img_ts, max_t_ms=12., max_dt=2., del_val=-10, prob=0.01, seed=None):
+    np.random.seed(seed)
+    dice_roll = np.random.uniform(size=img_ts.shape)
+    np.random.seed()
+    dt = np.random.randint(-max_dt, max_dt, size=img_ts.shape)*(dice_roll <= prob)
+    img_dt = img_ts + dt
+    img_dt[np.where(img_dt < 0)] = del_val
+    img_dt[np.where(img_dt > max_t_ms)] = max_t_ms
+
+    return img_dt
+
+# randomly remove spikes
+def rand_del(img_ts, prob=0.01, seed=None, del_val=-10):
+    np.random.seed(seed)
+    dice_roll = np.random.uniform(size=img_ts.shape)
+    del_img = np.copy(img_ts)
+    del_img[np.where(dice_roll <= prob)] = del_val
+
+    return del_img
+
+# randomly insert spikes
+def rand_add(img_ts, prob=0.01, seed=None, max_t_ms=12.):
+    np.random.seed(seed)
+    dice_roll = np.random.uniform(size=img_ts.shape)
+    add_img = np.copy(img_ts)
+    add_idx = np.where(dice_roll <= prob)
+    np.random.seed()
+    add_img[add_idx] = np.random.randint(1., max_t_ms, size=add_idx[0].shape)
+
+    return add_img
+
+
+#convert image to spike source array
+def build_spike_source_array(img_ts, del_val=-10):
+    line = img_ts.reshape(img_ts.size)
+    spikes = [[] for i in range(img_ts.size)]
+    for i in range(img_ts.size):
+        if line[i] != del_val:
+            spikes[i].append(line[i])
+
+    return spikes
+
+

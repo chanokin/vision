@@ -72,6 +72,7 @@ class V1FourToOneColumn(BaseColumn):
         sim = self.sim
         prob_conn = conn_std.probability_connector
         inner_conns = {}
+        minw, conw = 0., 0.
         for lyr in self.column_conn_prob:
             inner_conns[lyr] = {}
             for conn in self.column_conn_prob[lyr]:
@@ -79,15 +80,19 @@ class V1FourToOneColumn(BaseColumn):
                     continue
                 
                 src, dst, dst_lyr = self.decode_conn_key(lyr, conn)
-                max_weight = self.column_conn_wgt[lyr][conn]
-                min_weight = self.min_weight
+                conw = self.column_conn_wgt[lyr][conn]
+                minw = self.min_weight if conw > 0 else -self.min_weight
+                max_weight = max(minw, conw)
+                min_weight = min(minw, conw)
+
                 prob = self.column_conn_prob[lyr][conn]
                 delay = cfg['min_delay']
                 rng = sim.NumpyRNG(seed=None)
                 w_dist = sim.RandomDistribution('uniform', 
                                                 [min_weight, max_weight],
                                                 rng=rng)
-                conns = sim.FixedProbabilityConnector(prob, weights=w_dist,
+                conns = sim.FixedProbabilityConnector(prob, 
+                                                      weights=w_dist,
                                                       delays=delay)
                 # conns = prob_conn(self.pop_sizes[lyr][src],
                                   # self.pop_sizes[dst_lyr][dst],
@@ -108,7 +113,7 @@ class V1FourToOneColumn(BaseColumn):
         input_conns = {}
         dst_indices = []
         delay = cfg['input_delay']
-        
+        nid0, nidN = 0, 0
         for ch in self.lgn.channels:
             input_conns[ch] = {}
             for pop in self.lgn.output_keys():
@@ -117,14 +122,23 @@ class V1FourToOneColumn(BaseColumn):
                     if pop in key_to_pop[conn_key]:
                         dst_lyr, dst_pop = self.decode_in_conn_key(conn_key)
 
-                        sign = 1 if dst_pop == 'exc' else -1
+                        sign   = 1 if dst_pop == 'exc' else -1
                         weight = sign*self.in_weights[pop]
                         dst_size = self.pop_sizes[dst_lyr][dst_pop]
-                        dst_indices[:] = [i for i in range(dst_size)]
+                        
+                        if dst_lyr == 'l4':
+                            nid0 = 0 if ch == 'on' else dst_size//2
+                            nidN = dst_size//2 if ch == 'on' else dst_size
+                        else:
+                            nid0 = 0; nidN = dst_size
+                            
+                        dst_indices[:] = [i for i in range(nid0, nidN)]
                         prob = self.input_conn_prob['main'][conn_key]
                         conns = list_prob_conn(self.in_indices[pop],
                                                dst_indices, 
                                                prob, weight, delay)
+                        
+                        input_conns[ch][pop][conn_key] = conns
 
         return input_conns
         

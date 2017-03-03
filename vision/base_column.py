@@ -2,14 +2,14 @@ from sim_tools.common import *
 from sim_tools.connectors import kernel_connectors as conn_krn, \
                                  standard_connectors as conn_std
 from default_config import defaults_v1 as defaults
-
+from lgn import LGN
 import abc
 
 
 class BaseColumn(object):
     __metaclass__ = abc.ABCMeta
     
-    def __init__(self, lgn, width, height, location, learning_on, cfg):
+    def __init__(self, in_level, width, height, location, learning_on, cfg):
 
         for k in defaults.keys():
             if k not in cfg.keys():
@@ -20,10 +20,11 @@ class BaseColumn(object):
         self._v1_height = height
 
         self.learn_on = learning_on
-        self.lgn     = lgn
-        self.retina  = lgn.retina
-        self.width   = lgn.width 
-        self.height  = lgn.height
+        self.lgn = None
+        self.retina = None
+        self.in_level = in_level
+        self.width   = in_level.width 
+        self.height  = in_level.height
         self.in_weight_func = cfg['col_weight_func']
         self.location = location
         self.recpt_width = cfg['in_receptive_width']
@@ -41,35 +42,40 @@ class BaseColumn(object):
         self.in_weights = None
         self.min_weight = 0.0001
         self.inter_projs = {}
-
+        
+        if isinstance(in_level, LGN):
+            self.lgn    = in_level
+            self.retina = in_level.retina
+            self.build_input_indices_weights_lgn()
 
     def __str__(self):
         return "unit row %d, col %d"%(self.location[ROW], self.location[COL])
 
     def get_map_params(self, k):
+        step, start, width, height, krn_width = 0, 0, 0, 0, 0
+        if self.lgn is not None:
+            width  = self.lgn.pop_width(k)
+            height = self.lgn.pop_height(k)
+            step   = self.lgn.sample_step(k)
+            start  = self.lgn.sample_start(k)
 
-        width  = self.lgn.pop_width(k)
-        height = self.lgn.pop_height(k)
-        step   = self.lgn.sample_step(k)
-        start  = self.lgn.sample_start(k)
-
-        if k == 'cs4':
-            kk = 'cs_quart'
-        elif k == 'cs2':
-            kk = 'cs_half'
-        else:
-            kk = k
-        
-        if 'dir' not in kk:
-            krn_width = self.retina.cfg[kk]['width']        
-        else:
-            krn_width = 0
+            if k == 'cs4':
+                kk = 'cs_quart'
+            elif k == 'cs2':
+                kk = 'cs_half'
+            else:
+                kk = k
+            
+            if 'dir' not in kk:
+                krn_width = self.retina.cfg[kk]['width']        
+            else:
+                krn_width = 0
 
         return step, start, width, height, krn_width
 
 
     def get_row_col_limits(self, half_krn_width):
-        #location is in highest resolution scale (i.e. 'ctr_srr')
+        #location is in highest input resolution scale (i.e. 'ctr_srr')
         hkw = half_krn_width
         fr_r = max(0, self.location[ROW] - hkw)
         to_r = min(self.height, self.location[ROW] + hkw + 1)
@@ -79,6 +85,12 @@ class BaseColumn(object):
         return {ROW:fr_r, COL:fr_c}, {ROW:to_r, COL:to_c}
 
     def build_input_indices_weights(self):
+        if self.lgn is not None:
+            return self.build_input_indices_weights_lgn
+
+            
+            
+    def build_input_indices_weights_lgn(self):
         cfg = self.cfg
         indices = {k: [] for k in self.lgn.output_keys()}
         weights = {k: [] for k in self.lgn.output_keys()}
@@ -137,7 +149,8 @@ class BaseColumn(object):
 
         self.in_indices = {k: np.array(indices[k]) for k in indices}
         self.in_weights = {k: np.array(weights[k]) for k in weights}
-    
+
+
     def get_synapse_dynamics(self):
         if not self.learn_on:
             return None
