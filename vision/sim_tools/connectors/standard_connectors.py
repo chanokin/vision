@@ -69,22 +69,22 @@ def one2one(num_neurons, weight=2., delay=1., start_idx=0):
     return conns
 
 
-def wta(num_neurons, weight=-2., delay=1., start_idx=0):
+def wta(num_neurons, weight=-2., delay=1., start_idx=0, inh_delay_add=1):
 
     end_idx = start_idx + num_neurons
     conns = [(i, j, weight, delay) for i in range(start_idx, end_idx) \
                                    for j in range(start_idx, end_idx) if i != j]
-    conns += [(i, i, weight, delay+1) for i in range(start_idx, end_idx)]
+    conns += [(i, i, weight, delay+inh_delay_add) for i in range(start_idx, end_idx)]
 
     return conns
 
 
 def wta_interneuron(num_neurons, ff_weight=2., fb_weight=-2., delay=1., 
-                    start_idx=0):
+                    start_idx=0, inh_delay_add=1):
                         
     conn_ff = one2one(num_neurons, np.abs(ff_weight), delay, start_idx)
     
-    conn_fb = wta(num_neurons, fb_weight, delay, start_idx)
+    conn_fb = wta(num_neurons, fb_weight, delay, start_idx, inh_delay_add)
     
     return conn_ff, conn_fb
 

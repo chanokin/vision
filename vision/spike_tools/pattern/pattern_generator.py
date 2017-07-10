@@ -341,7 +341,8 @@ def jitter_pattern(spike_array, max_jitter=1):
 
 def oclude_pattern(spike_array, oclude_prob=0.2):
     r_seed = np.uint32(time.time()*100000)
-    np.random.seed( r_seed )
+#     np.random.seed( r_seed )
+    np.random.seed()
     len_spks = len(spike_array)
     to_oclude = np.random.random(size=len_spks) < oclude_prob
     spikes = [[] for i in range(len_spks)]
@@ -357,7 +358,7 @@ def oclude_pattern(spike_array, oclude_prob=0.2):
                 t = spikes[n_idx][t_idx]
                 spikes[n_idx].remove(t)
     
-    return spike_array
+    return spikes
 
 
 
