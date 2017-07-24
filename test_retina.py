@@ -77,11 +77,13 @@ thresh = int(255*0.05) # just for plotting
 
 mnist_dir = "../../pyDVS/mnist_spikes/" + \
             "mnist_behave_SACCADE_pol_MERGED" + \
-            "_enc_TIME_thresh_12_hist_99_00" + \
+            "_enc_RATE_thresh_12_hist_99_00" + \
             "_inh_False___" + \
             "200_frames_at_100fps_32x32_res_spikes/" + \
             "t10k/"
             # "t10k/" "train/"
+
+
 ###############################################################################
 #
 #  S W I T C H E S 
@@ -90,13 +92,13 @@ mnist_dir = "../../pyDVS/mnist_spikes/" + \
 #
 plot_cam_spikes = True if 1 else False
 simulate_retina = True if 1 else False
-competition_on  = True if 1 else False
+competition_on  = True if 0 else False
 #
 ###############################################################################
 
 
-on_time_ms  = int( frames*(1000./fps) )
-ftime_ms    = int( 1000./fps )*5 # how many milliseconds to (frmo frames) to plot
+on_time_ms  = int( frames*(1000./fps) ) # total simulation time
+ftime_ms    = int( 1000./fps )*2 # how many milliseconds (from frames) to plot
 off_time_ms = 0
 start_time  = 0
 # spikes_dir = os.path.join(mnist_dir, '')

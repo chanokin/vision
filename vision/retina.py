@@ -219,6 +219,7 @@ class Retina():
                     gab_corr[g0][g1] = convolve2d(self.gab[g0], self.gab[g1], 
                                                   mode='same')
 
+        # if cfg['lateral_competition']:
         for cs0 in self.css:
             corr[cs0] = {}
             for cs1 in self.css:

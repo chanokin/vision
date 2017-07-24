@@ -1,5 +1,6 @@
 import numpy as np
-import pylab
+from matplotlib import pyplot as plt
+
 from ..pattern.pattern_generator import out_to_spike_array
 import matplotlib.animation as animation
 
@@ -8,22 +9,42 @@ X, Y, Z = 0, 1, 2
 
 
 def plot_kernel(kernel, title, save=True):
-    fig = pylab.figure()
-    ax = pylab.subplot(1,1,1)
-    img = my_imshow(ax, kernel, cmap=None)
-    pylab.colorbar()
-    pylab.suptitle(title)
+    from matplotlib.colors import BoundaryNorm
+    # cmap = plt.get_cmap('PuBu_r')
+    cmap = plt.get_cmap('Spectral')
+    cmap = plt.get_cmap('RdYlGn')
+    cmap_list = [cmap(i) for i in range(cmap.N)]
+    custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap.N)
+    
+    step =  np.abs( np.min(kernel) ) / 100.
+    neg_bounds = np.arange(np.min(kernel), 0, step)
+    step =  np.abs( np.max(kernel) ) / 100.
+    pos_bounds = np.arange(0, np.max(kernel)+step, step)
+    bounds = np.concatenate( (neg_bounds, pos_bounds) )
+    # print("\n\nplot_kernel")
+    # print(bounds)
+    # idx = np.searchsorted(bounds, 0)
+    # print(idx)
+    # bounds = np.insert(bounds, idx, 0)
+    norm = BoundaryNorm(bounds, cmap.N)
+   
+    fig = plt.figure()
+    ax = plt.subplot(1,1,1)
+    img = my_imshow(ax, kernel, cmap=custom_cmap, norm=norm)
+    plt.colorbar()
+    plt.suptitle(title)
     if save:
-        pylab.savefig("%s.png"%(title), dpi=300)
+        plt.savefig("%s.png"%(title), dpi=300)
     else:
-        pylab.show()
-    pylab.close()
+        plt.show()
+    plt.close()
 
 def my_imshow(ax, img, cmap="Greys_r", interpolation="none", 
-              vmin=None, vmax=None, no_ticks=True):
+              vmin=None, vmax=None, no_ticks=True, norm=None):
     if no_ticks:
         remove_ticks(ax)
-    return pylab.imshow(img, cmap=cmap, interpolation=interpolation, vmin=vmin, vmax=vmax)
+    return plt.imshow(img, cmap=cmap, interpolation=interpolation, 
+                      vmin=vmin, vmax=vmax, norm=norm)
 
 
 def remove_ticks(ax):
@@ -117,26 +138,26 @@ def layer_to_imgs(nrn_ids, weights, src_neuron_pos, connections):
 
 
 def plot_imgs(imgs, figs_per_row, save=False, filename=None, min_v=0., max_v=2.):
-    import pylab
+    import plt
 
     i = 0
     n_imgs = len(imgs)
-    fig = pylab.figure()
+    fig = plt.figure()
     n_rows = n_imgs/figs_per_row + 1
     for img in imgs:
         i += 1
         if img is None:
             continue
 
-        pylab.subplot(n_rows, figs_per_row, i)
-        pylab.imshow(img, interpolation='none', cmap='Greys_r', \
+        plt.subplot(n_rows, figs_per_row, i)
+        plt.imshow(img, interpolation='none', cmap='Greys_r', \
                      vmin=min_v, vmax=max_v)
-        pylab.axis('off')
+        plt.axis('off')
     
     if save and filename is not None:
-        pylab.savefig(filename, dpi=300)
+        plt.savefig(filename, dpi=300)
     else:
-        pylab.show()
+        plt.show()
 
 
 
@@ -209,9 +230,9 @@ def sum_horz_kern(img_width, img_height, kernel_width,
             new_img[r, c] = k_sum
     
 
-    fig = pylab.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(5, 5))
     
-    ax = pylab.subplot(1, 1, 1)
+    ax = plt.subplot(1, 1, 1)
     # ax.set_title("k%s"%(k_idx))
     my_imshow(ax, new_img)
 
@@ -230,19 +251,19 @@ def sum_sep_kern(img_width, img_height, kernel_width, kernel_images):
             k_idx = r*min_w + c
             new_img[r, c] = kernel_images[k_idx].sum()
     
-    pylab.tick_params(axis='x',          # changes apply to the x-axis
+    plt.tick_params(axis='x',          # changes apply to the x-axis
                     which='both',      # both major and minor ticks are affected
                     bottom='off',      # ticks along the bottom edge are off
                     top='off',         # ticks along the top edge are off
                     labelbottom='off')
-    pylab.tick_params(axis='y',          # changes apply to the x-axis
+    plt.tick_params(axis='y',          # changes apply to the x-axis
                     which='both',      # both major and minor ticks are affected
                     bottom='off',      # ticks along the bottom edge are off
                     top='off',         # ticks along the top edge are off
                     labelbottom='off')
-    fig = pylab.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(5, 5))
     
-    ax = pylab.subplot(1, 1, 1)
+    ax = plt.subplot(1, 1, 1)
     # ax.set_title("k%s"%(k_idx))
     my_imshow(ax, new_img)
 
@@ -267,7 +288,7 @@ def parse_conns_to_dict(conns):
 
 def plot_sep_kern(img_width, img_height, kernel_width, 
                   horz_weights, vert_weights, 
-                  num_cols = 4, save_file=None, pylab_w = 2.,
+                  num_cols = 4, save_file=None, plt_w = 2.,
                   h_col_step=2, h_row_step=2):
     kernel_width = int(kernel_width)
     min_w = (img_width  - (kernel_width - 1))
@@ -306,10 +327,10 @@ def plot_sep_kern(img_width, img_height, kernel_width,
 
 
     subplot_idx = 0
-    fig = pylab.figure(figsize=(pylab_w*num_cols, pylab_w*num_rows))
+    fig = plt.figure(figsize=(plt_w*num_cols, plt_w*num_rows))
     for k_idx in range(len(imgs)):
         subplot_idx += 1
-        ax = pylab.subplot(num_rows, num_cols, subplot_idx)
+        ax = plt.subplot(num_rows, num_cols, subplot_idx)
         my_imshow(ax, imgs[k_idx])
             
         prev_v_idx = v_idx
@@ -345,13 +366,13 @@ def plot_1D_conv_conns(conv_conns, img_w, img_h, krnl_w, horiz_conv=True,
     print(num_kernels)
     n_cols = 6
     n_rows = num_kernels//n_cols + 1
-    fig = pylab.figure(figsize=(2.8*n_cols, 2.8*n_rows))
+    fig = plt.figure(figsize=(2.8*n_cols, 2.8*n_rows))
     subplot_idx = 1
     sources = []
     i = 0
     w = 1.
     for tgt in conn_dic.keys():
-        ax = pylab.subplot(n_rows, n_cols, subplot_idx)
+        ax = plt.subplot(n_rows, n_cols, subplot_idx)
         sources[:] = [ i for i, w in conn_dic[tgt] ]
         ax.set_title("%s -> %s"%(sources, tgt))
         subplot_idx += 1
@@ -365,7 +386,7 @@ def plot_1D_conv_conns(conv_conns, img_w, img_h, krnl_w, horiz_conv=True,
 
 
 def plot_spikes(spike_array, max_y=None, pad = 2, title="", marker='.', 
-                color='blue', markersize=4, base_id=0, plotter=pylab):
+                color='blue', markersize=4, base_id=0, plotter=plt):
     neurons = []
     times   = []
     n_idx   = 0
@@ -385,27 +406,27 @@ def plot_spikes(spike_array, max_y=None, pad = 2, title="", marker='.',
     plotter.plot(times, neurons, linestyle='none',
                  marker=marker, markerfacecolor=color, markersize=markersize,
                  color=color)
-    # pylab.xlim(min_time - pad, max_time + pad)
+    # plt.xlim(min_time - pad, max_time + pad)
     # print("max_y ", max_y)
     if max_y is None:
         
         max_y = n_idx 
     
-    if plotter != pylab:
+    if plotter != plt:
         plotter.set_ylim(-pad, max_y + pad)
     else:
         plotter.ylim(-pad, max_y + pad)
 
 
-    # pylab.xlabel("Time (ms)")
-    # pylab.ylabel("Neuron id")
-    # pylab.title(title)
+    # plt.xlabel("Time (ms)")
+    # plt.ylabel("Neuron id")
+    # plt.title(title)
 
 
 
 
 def plot_output_spikes(spikes, pad=0, marker='.', color='blue', markersize=4,
-                       plotter=pylab, max_y=None, pad_y=2, markeredgewidth=0,
+                       plotter=plt, max_y=None, pad_y=2, markeredgewidth=0,
                        markeredgecolor='none'):
     if len(spikes) == 0:
         return 0
@@ -424,7 +445,7 @@ def plot_output_spikes(spikes, pad=0, marker='.', color='blue', markersize=4,
     plotter.plot(spike_times, spike_ids, marker, markersize=markersize, 
                  markerfacecolor=color, markeredgecolor=markeredgecolor, 
                  markeredgewidth=markeredgewidth)
-    if plotter != pylab:
+    if plotter != plt:
         plotter.set_ylim(-pad_y, max_y + pad_y)
     else:
         plotter.ylim(-pad_y, max_y + pad_y)
@@ -537,7 +558,7 @@ def plot_class_weights_2D_array(weights, num_classes, img_width, img_height,
     num_prev_neurons = img_width*img_height
     
     for i in range(num_classes):
-        ax = pylab.subplot(num_rows, num_cols, i+1)
+        ax = plt.subplot(num_rows, num_cols, i+1)
         if hex_plot:
             pass
             # from ....hex_net.hex_pixel import HexImage
@@ -562,7 +583,7 @@ def plot_class_weights(weights, num_classes, img_width, img_height,
 
     sub_idx = 1
     for img in imgs:
-        ax = pylab.subplot(num_rows, num_cols, sub_idx)
+        ax = plt.subplot(num_rows, num_cols, sub_idx)
         sub_idx += 1
         my_imshow(ax, img.reshape((img_height, img_width)),
                   vmin=vmin, vmax=vmax)
@@ -582,7 +603,7 @@ def remove_ticks(ax):
 def build_gif(imgs, filename='', show_gif=True, save_gif=True, title='',
               interval=100):
 
-    fig = pylab.figure()
+    fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_axis_off()
 
@@ -598,7 +619,7 @@ def build_gif(imgs, filename='', show_gif=True, save_gif=True, title='',
         im_ani.save(filename, writer='imagemagick')
 
     if show_gif:
-        pylab.draw()
+        plt.draw()
 
     return
 

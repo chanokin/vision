@@ -425,7 +425,7 @@ def img_spikes_from_to(path, num_neurons,
                        start_file_idx, end_file_idx, 
                        on_time_ms, off_time_ms, 
                        start_time, delete_before=0, ext='txt',
-                       noise=True, noise_prob=0.3):
+                       noise=True, noise_prob=0.):
     start = start_file_idx
     end   = end_file_idx
     spikes = []
