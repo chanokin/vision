@@ -1,21 +1,23 @@
 from __future__ import print_function
 import numpy as np
 import sys
+import os
+import pickle
 
 DEBUG = True
 
 if sys.version_info.major == 2:
-  def range(start, stop=None, step=None):
-      start = int(start)
-      if stop is None:
-          return xrange(start)
-      elif step is None:
-          step = int(stop)
-          return xrange(start, stop)
-      else:
-          stop = int(stop)
-          step = int(step)
-          return xrange(start, stop, step)
+    def range(start, stop=None, step=None):
+        start = int(start)
+        if stop is None:
+            return xrange(start)
+        elif step is None:
+            step = int(stop)
+            return xrange(start, stop)
+        else:
+            stop = int(stop)
+            step = int(step)
+            return xrange(start, stop, step)
 
 EXC, INH = 0, 1
 ROW, COL = 0, 1
@@ -32,15 +34,15 @@ def rad2deg(r):
     return R2D*r
 
 def normalize(mat):
-  w = 1./np.sum(np.abs(mat))
-  return mat*w, w
+    w = 1./np.sum(np.abs(mat))
+    return mat*w, w
 
 def conv2one(mat):
-  w = 1./np.sqrt(np.sum(mat**2))
-  return mat*w, w
+    w = 1./np.sqrt(np.sum(mat**2))
+    return mat*w, w
 
 def sum2zero(mat):
-  return mat - np.mean(mat)
+    return mat - np.mean(mat)
 
 def seed_rand(seed=None):
     # if seed is None:

@@ -63,8 +63,8 @@ def split_center_surround_kernel(width=3, ctr_sigma=0.8, sigma_mult=6.7):
         cs_kernel, w = cs_3x3()
         s2 = 1/np.sqrt(2)
         c = 4.*( 1 + s2 )
-        ctr = np.array([[0, 0, 0], [0, c, 0], [0, 0, 0]])*w
-        srr = np.array([[-s2, -1, -s2], [-1, 0, -1], [-s2, -1, -s2]])*w
+        ctr = np.array([[0, 0, 0], [0, c, 0], [0, 0, 0]])
+        srr = np.array([[s2, 1, s2], [1, c, 1], [s2, 1, s2]])
     else:
         ctr = gaussian2D(width, ctr_sigma)
         ctr, w = normalize(ctr)

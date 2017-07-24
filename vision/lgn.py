@@ -1,6 +1,6 @@
 from sim_tools.common import *
-from sim_tools.kernels import center_surround as krn_cs, gabor as krn_gbr
-from sim_tools.connectors import kernel_connectors as conn_krn, \
+from sim_tools.kernels import center_surround as krn_gen, gabor as krn_gbr
+from sim_tools.connectors import kernel_connectors as krn_con, \
                                  standard_connectors as conn_std, \
                                  mapping_funcs as mapf
 from scipy.signal import convolve2d, correlate2d
@@ -20,6 +20,8 @@ class LGN():
         self.cfg      = cfg
         self.sim      = simulator
         self.retina   = retina
+        self.rcfg     = retina.cfg
+        self.rcs      = retina.cs
         self.channels = retina.channels
         self.shapes   = retina.shapes
         self.width    = retina.width
@@ -69,49 +71,71 @@ class LGN():
         return self.pops[self.channels[0]].keys()
         
     def build_kernels(self):
-        cfg = self.cfg
-        self.cs = krn_cs.center_surround_kernel(cfg['kernel_width'],
-                                                cfg['ctr_srr']['std_dev'], 
-                                                cfg['ctr_srr']['sd_mult'])
-        self.cs *= cfg['w2s']
+        rcfg = self.rcfg
+        cfg  = self.cfg
+        cs = {}
+        ccss = 'cs'
+        cs[ccss] = krn_gen.split_center_surround_kernel(rcfg[ccss]['width'],
+                                                        rcfg[ccss]['std_dev'], 
+                                                        rcfg[ccss]['sd_mult'])
+        for i in range(len(cs[ccss])): 
+            # print( cs[ccss][i] )
+
+            inv_sum_pos = 1./(np.sum(cs[ccss][i]))
+            cs[ccss][i] *= inv_sum_pos * cfg['w2s'] * rcfg[ccss]['w2s_mult']
+            print( cs[ccss][i] )
         
-        self.split_cs = krn_cs.split_center_surround_kernel(cfg['kernel_width'],
-                                                            cfg['ctr_srr']['std_dev'], 
-                                                            cfg['ctr_srr']['sd_mult'])
-        for i in range(len(self.split_cs)):
-            self.split_cs[i] *= cfg['w2s']
+        # sys.exit(0)
+        self.split_cs = cs
 
 
     def build_connectors(self):
+        sim = self.sim
         cfg = self.cfg
         conns = {}
-        
-        for k in self.retina.get_output_keys():
-            width, height = self.pop_width(k), self.pop_height(k)
-            conns[k] = {}
-            exc, inh = conn_krn.full_kernel_connector(width, height,
-                                                      self.split_cs[EXC],
-                                                      cfg['kernel_exc_delay'],
-                                                      cfg['kernel_inh_delay'],
-                                                      cfg['col_step'], 
-                                                      cfg['row_step'],
-                                                      cfg['start_col'], 
-                                                      cfg['start_row'],
-                                                      map_to_src=mapf.row_major,
-                                                      pop_width=width)
+        scs = self.split_cs
+        for ccss in self.retina.get_output_keys():
+
+            pre_shape = (self.pop_height(ccss), self.pop_width(ccss))
+            pre_start = (self.sample_start(ccss), self.sample_start(ccss))
+            pre_steps = (self.sample_step(ccss), self.sample_step(ccss))
+
+            conns[ccss] = {}
             
-            tmp, inh[:] = conn_krn.full_kernel_connector(width, height,
-                                                         self.split_cs[INH],
-                                                         cfg['kernel_exc_delay'],
-                                                         cfg['kernel_inh_delay'],
-                                                         cfg['col_step'], 
-                                                         cfg['row_step'],
-                                                         cfg['start_col'], 
-                                                         cfg['start_row'],
-                                                         map_to_src=mapf.row_major,
-                                                         pop_width=width,
-                                                         remove_inh_only=False)
-            conns[k] = {EXC: exc, INH: inh}
+            if self.sim.__name__ == 'pyNN.spiNNaker':
+
+                exc = sim.KernelConnector(pre_shape, pre_shape,
+                                          weights=scs['cs'][EXC], 
+                                          delays=cfg['kernel_exc_delay'], 
+                                          generate_on_machine=True)
+
+                inh = sim.KernelConnector(pre_shape, pre_shape,
+                                          weights=scs['cs'][INH], 
+                                          delays=cfg['kernel_inh_delay'], 
+                                          generate_on_machine=True)
+            else:
+                ex, _ = krn_con.full_kernel_connector(self.pop_width(ccss), 
+                                                      self.pop_height(ccss),
+                                                      scs['cs'][EXC], 
+                                                      cfg['kernel_exc_delay'], 
+                                                      cfg['kernel_inh_delay'],
+                                                      map_to_src=mapf.row_major,
+                                                      pop_width=self.pop_width(ccss)
+                                                     )
+
+                ih, _ = krn_con.full_kernel_connector(self.pop_width(ccss), 
+                                                      self.pop_height(ccss),
+                                                      scs['cs'][INH], 
+                                                      cfg['kernel_exc_delay'], 
+                                                      cfg['kernel_inh_delay'],
+                                                      map_to_src=mapf.row_major,
+                                                      pop_width=self.pop_width(ccss)
+                                                     )
+
+                exc = sim.FromListConnector(ex)
+                inh = sim.FromListConnector(ih)
+
+            conns[ccss] = {EXC: exc, INH: inh}
 
         self.conns = conns
 
@@ -125,26 +149,29 @@ class LGN():
         inh_parm = cfg['inh_cell']['params']
         
         pops = {}
+
         for c in self.channels:
+            c = self.channels[c]
+
             pops[c] = {}
             for k in self.retina.get_output_keys():
                 popsize = self.pop_size(k)
 
                 pops[c][k] = {}
-                pops[c][k]['inter']   = sim.Population(popsize,
-                                                    inh_cell, inh_parm,
-                                                    label='LGN inter %s %s'%(c, k))
-                pops[c][k]['output']  = sim.Population(popsize,
-                                                    exc_cell, exc_parm,
-                                                    label='LGN output %s %s'%(c, k))
+                pops[c][k]['inter']    = sim.Population(popsize,
+                                               inh_cell, inh_parm,
+                                               label='LGN inter %s %s'%(c, k))
+                pops[c][k]['ganglion'] = sim.Population(popsize,
+                                               exc_cell, exc_parm,
+                                               label='LGN output %s %s'%(c, k))
 
                 if cfg['record']['voltages']:
                     pops[c][k]['inter'].record_v()
-                    pops[c][k]['output'].record_v()
+                    pops[c][k]['ganglion'].record_v()
 
                 if cfg['record']['spikes']:
                     pops[c][k]['inter'].record()
-                    pops[c][k]['output'].record()
+                    pops[c][k]['ganglion'].record()
             
         self.pops = pops
 
@@ -154,6 +181,7 @@ class LGN():
         cfg = self.cfg
         projs = {}
         for c in self.channels:
+            c = self.channels[c]
             projs[c] = {}
             for k in self.retina.get_output_keys():
                 # print('lgn - projections - key: %s'%k)
@@ -168,15 +196,15 @@ class LGN():
                                                       target='excitatory')
 
                 split = self.conns[k]
-                flc = sim.FromListConnector(split[EXC])
                 projs[c][k]['exc'] = sim.Projection(self.retina.pops[c][k]['ganglion'], 
-                                                    self.pops[c][k]['output'], flc,
+                                                    self.pops[c][k]['ganglion'], 
+                                                    split[EXC],
                                                     target='excitatory')
 
                 cntr_c = 'off' if c == 'on' else 'on'
-                flc = sim.FromListConnector(split[INH]) #conns['cs']?
                 projs[c][k]['inh'] = sim.Projection(self.pops[cntr_c][k]['inter'], 
-                                                    self.pops[c][k]['output'], flc,
+                                                    self.pops[c][k]['ganglion'], 
+                                                    split[INH],
                                                     target='inhibitory')
 
             self.projs = projs

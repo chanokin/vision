@@ -6,8 +6,21 @@ import matplotlib.animation as animation
 SRC, DST, W, DLY = 0, 1, 2, 3
 X, Y, Z = 0, 1, 2
 
+
+def plot_kernel(kernel, title, save=True):
+    fig = pylab.figure()
+    ax = pylab.subplot(1,1,1)
+    img = my_imshow(ax, kernel, cmap=None)
+    pylab.colorbar()
+    pylab.suptitle(title)
+    if save:
+        pylab.savefig("%s.png"%(title), dpi=300)
+    else:
+        pylab.show()
+    pylab.close()
+
 def my_imshow(ax, img, cmap="Greys_r", interpolation="none", 
-              vmin=None, vmax=None, no_ticks=True, colorbar=False):
+              vmin=None, vmax=None, no_ticks=True):
     if no_ticks:
         remove_ticks(ax)
     return pylab.imshow(img, cmap=cmap, interpolation=interpolation, vmin=vmin, vmax=vmax)
@@ -456,7 +469,7 @@ def imgs_in_T_from_spike_array(spike_array, img_width, img_height,
     num_neurons = img_width*img_height
     if out_array: # should be output spike format
         mult = 2 if up_down is None else 1
-        print("imgs_in_T, num neurons: %d"%(mult*num_neurons))
+        print("\t\timgs_in_T, num neurons: %d"%(mult*num_neurons))
         spike_array = out_to_spike_array(spike_array, mult*num_neurons)
 
 
@@ -482,20 +495,24 @@ def imgs_in_T_from_spike_array(spike_array, img_width, img_height,
             row, col, up_dn = map_func(nrn_id, img_width, img_height)
             if up_down is not None:
                 up_dn = up_down
-                
+
             for spk_t in spikes[nrn_id][nrn_start_idx[nrn_id]:]:
                 if t <= spk_t < t+t_step:
-                    # imgs[t_idx][row, col, up_dn] += thresh
-                    imgs[t_idx][row, col, up_dn] = 255
+                    if imgs[t_idx][row, col, up_dn] + thresh > 255:
+                        imgs[t_idx][row, col, up_dn] = 255
+                    else:
+                        imgs[t_idx][row, col, up_dn] += thresh
+                    # imgs[t_idx][row, col, up_dn] = 255
                 else:
                     break
                 nrn_start_idx[nrn_id] += 1
+        # for c in range(3):
+        #     imgs[t_idx][:,:,c] = imgs[t_idx][:,:,c]/np.sum(imgs[t_idx][:,:,c])
 
         t_idx += 1
 
     # for t_idx in range(len(imgs)):
         # imgs[t_idx] = imgs[t_idx].reshape((img_height, img_width))
-    
     return imgs
 
 
