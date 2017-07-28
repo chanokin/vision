@@ -175,6 +175,9 @@ class Retina():
 
 
     def build_kernels(self):
+        def cap_vals(k, mw):
+            return k*(k > mw)
+
         def a2k(a):
             return 'gabor_%d'%( int( a ) )
         if os.path.isfile("kernel_correlation_cache.pickle"):
@@ -189,14 +192,16 @@ class Retina():
         corr = {}
         cfg = self.cfg
         for ccss in self.css:
-            krns[ccss] = krn_cs.center_surround_kernel(cfg[ccss]['width'],
-                                                       cfg[ccss]['std_dev'], 
-                                                       cfg[ccss]['sd_mult'])
+            krns[ccss] = krn_cs.gaussian2D(cfg[ccss]['width'],
+                                           cfg[ccss]['std_dev'])
             
-            sum_pos = np.sum(krns[ccss][ krns[ccss] > 0 ])
-            inv_sum_pos = 1./sum_pos
+            # sum_pos = np.sum(krns[ccss][ krns[ccss] > 0 ])
+            # inv_sum_pos = 1./sum_pos
 
-            krns[ccss] *= inv_sum_pos * cfg['w2s'] * cfg[ccss]['w2s_mult']
+            # krns[ccss] *= inv_sum_pos * cfg['w2s'] * cfg[ccss]['w2s_mult']
+            # krns[ccss] *= inv_sum_pos * cfg[ccss]['w2s_mult']
+            krns[ccss] = sum2one(krns[ccss]) 
+            krns[ccss] *= cfg['w2s'] * cfg[ccss]['w2s_mult']
 
             if 'plot_kernels' in cfg and cfg['plot_kernels']:
                 plot_kernel(krns[ccss], ccss)
@@ -223,14 +228,30 @@ class Retina():
         for cs0 in self.css:
             corr[cs0] = {}
             for cs1 in self.css:
+                print("\t\tGenerating correlation %s <-> %s"%(cs0, cs1))
                 corr[cs0][cs1]  = correlate2d(krns[cs0], krns[cs1], mode='same')
-                corr[cs0][cs1][:] = sum2zero(corr[cs0][cs1])
-                corr[cs0][cs1][:], _ = conv2one(corr[cs0][cs1])
+                # corr[cs0][cs1][:] = sum2zero(corr[cs0][cs1])
+                # corr[cs0][cs1][:], _ = conv2one(corr[cs0][cs1])
+                # corr[cs0][cs1] *= cfg['w2s']*cfg['corr_w2s_mult']
+                corr[cs0][cs1] = sum2one(corr[cs0][cs1])
                 corr[cs0][cs1] *= cfg['w2s']*cfg['corr_w2s_mult']
 
                 if 'plot_kernels' in cfg and cfg['plot_kernels']:
                     plot_kernel(corr[cs0][cs1], "corr_%s_to_%s"%(cs0, cs1))
+                    plot_kernel(krns[cs0] - corr[cs0][cs1], "cs_%s_to_%s"%(cs0, cs1))
+                
+                corr[cs0][cs1][corr[cs0][cs1].shape[0]//2, \
+                               corr[cs0][cs1].shape[1]//2] = 0
+                
+                # print(corr[cs0][cs1].shape)
+                # print(np.sum(corr[cs0][cs1] > 0))
+                # print(np.sum(corr[cs0][cs1] == 0))
+                # print(np.sum(corr[cs0][cs1] < 0))
+                corr[cs0][cs1] = cap_vals(corr[cs0][cs1], cfg['min_weight'])
         
+        for cs0 in self.css:
+            self.cs[cs0] = cap_vals(self.cs[cs0], cfg['min_weight'])
+
         pickle.dump({'ctr_srr': krns, 'cs_corr': corr, 'gab': gab},
                     open("kernel_correlation_cache.pickle", 'wb'))
 
@@ -302,20 +323,16 @@ class Retina():
                     if self.sim.__name__ == 'pyNN.spiNNaker':
                         pre_shape = self.shapes['orig']
                         post_shape = (shapes[k]['height'], shapes[k]['width'])
-                        exc =  sim.KernelConnector(pre_shape, post_shape,
+                        inh =  sim.KernelConnector(pre_shape, post_shape,
                                                    (step, step), 
                                                    (start, start),
                                                    krn*(krn > 0),
                                                    cfg['kernel_exc_delay'], 
                                                    generate_on_machine=True)
-                        inh =  sim.KernelConnector(pre_shape, post_shape,
-                                                   (step, step), 
-                                                   (start, start),
-                                                   krn*(krn < 0),
-                                                   cfg['kernel_exc_delay'], 
-                                                   generate_on_machine=True)
+                        exc =  sim.OneToOneConnector(weights=cfg['w2s'],
+                                                     delays=cfg['kernel_exc_delay'])
                         conn = { EXC: exc, 
-                                #  INH: inh 
+                                 INH: inh 
                                }
                     else:
                         conns = krn_conn(self.width, self.height, krn,
@@ -422,20 +439,22 @@ class Retina():
         for k in css:
 
             #correlation between two of the smallest (3x3) centre-surround
-            krn = self.corr['cs']['cs']
-            print("---------------------------------------------------------")
-            print(krn)
-            print("---------------------------------------------------------")
+            krn = self.corr[k][k]
+            # print("---------------------------------------------------------")
+            # print(krn)
+            # print("---------------------------------------------------------")
             if self.sim.__name__ == 'pyNN.spiNNaker':
                 post_shape = (shapes[k]['height'], shapes[k]['width'])
 
-                exc = sim.KernelConnector(post_shape, post_shape, krn.shape,
-                                          weights=krn*(krn > 0), 
-                                          delays=cfg['kernel_exc_delay'], 
-                                          generate_on_machine=True)
-
+                # exc = sim.KernelConnector(post_shape, post_shape, krn.shape,
+                #                           weights=krn*(krn > 0), 
+                #                           delays=cfg['kernel_exc_delay'], 
+                #                           generate_on_machine=True)
+                exc =  sim.OneToOneConnector(weights=cfg['w2s'],
+                                             delays=cfg['kernel_exc_delay'],
+                                             generate_on_machine=True)
                 inh = sim.KernelConnector(post_shape, post_shape, krn.shape,
-                                          weights=-krn*(krn < 0), 
+                                          weights=krn*(krn > 0), 
                                           delays=cfg['kernel_inh_delay'], 
                                           generate_on_machine=True)
 
@@ -447,7 +466,10 @@ class Retina():
                                  inh_delay=cfg['kernel_inh_delay'],
                                  map_to_src=mapf.row_major,
                                  pop_width=shapes[k]['width'])
-                conn ={ EXC: sim.FromListConnector(conns[EXC]),
+
+                # conn ={ EXC: sim.FromListConnector(conns[EXC]),
+                conn ={ EXC: sim.OneToOneConnector(weights=cfg['w2s'],
+                                 delays=cfg['kernel_exc_delay']),
                         INH: sim.FromListConnector(conns[INH]) }
 
             self.extra_conns['ganglion'][k] = conn
@@ -505,16 +527,16 @@ class Retina():
                     if self.sim.__name__ == 'pyNN.spiNNaker':
 
                         conns = {}
-                        conns[EXC] = sim.KernelConnector(pre_shape, post_shape,
-                                                 krn.shape,
-                                                 shape_common=common_shape,
-                                                 pre_sample_steps=pre_step,
-                                                 pre_start_coords=pre_start,
-                                                 post_sample_steps=post_step,
-                                                 post_start_coords=post_start,
-                                                 weights=krn*(krn > 0), 
-                                                 delays=cfg['kernel_exc_delay'], 
-                                                 generate_on_machine=True )
+                        # conns[EXC] = sim.KernelConnector(pre_shape, post_shape,
+                        #                          krn.shape,
+                        #                          shape_common=common_shape,
+                        #                          pre_sample_steps=pre_step,
+                        #                          pre_start_coords=pre_start,
+                        #                          post_sample_steps=post_step,
+                        #                          post_start_coords=post_start,
+                        #                          weights=krn*(krn > 0), 
+                        #                          delays=cfg['kernel_exc_delay'], 
+                        #                          generate_on_machine=True )
 
                         conns[INH] = sim.KernelConnector(pre_shape, post_shape,
                                                  krn.shape,
@@ -523,7 +545,7 @@ class Retina():
                                                  pre_start_coords=pre_start,
                                                  post_sample_steps=post_step,
                                                  post_start_coords=post_start,
-                                                 weights=np.abs(krn*(krn < 0)), 
+                                                 weights=np.abs(krn*(krn > 0)), 
                                                  delays=cfg['kernel_inh_delay'], 
                                                  generate_on_machine=True )
 
@@ -531,7 +553,7 @@ class Retina():
                         conn = conn_krn.competition_connector(self.width, self.height,
                                                     pre_shape, pre_start, pre_step,
                                                     post_shape, post_start, post_step,
-                                                    krn, cfg['kernel_exc_delay'], 
+                                                    -krn, cfg['kernel_exc_delay'], 
                                                     cfg['kernel_inh_delay'])
 
                         
@@ -656,7 +678,7 @@ class Retina():
                                      self.pops[k][p]['ganglion'],
                                      cs_exc,
                                      target='excitatory')
-
+                # exc = None
                 inh = sim.Projection(self.pops[k][p]['inter'], 
                                      self.pops[k][p]['ganglion'],
                                      cs_inh,
@@ -677,11 +699,11 @@ class Retina():
                     prjs = {}
                     pre = self.pops[ch][cs0]['ganglion']
                     post = self.pops[ch][cs1]['ganglion']
-                    conn = self.lat_conns[cs0][cs1][EXC] 
+                    # conn = self.lat_conns[cs0][cs1][EXC] 
 
-                    prjs[EXC] = sim.Projection(pre, post, conn,
-                                        target='excitatory',
-                                        label='lateral exc %s -> %s'%(cs0, cs1))
+                    # prjs[EXC] = sim.Projection(pre, post, conn,
+                    #                     target='excitatory',
+                    #                     label='lateral exc %s -> %s'%(cs0, cs1))
                     
                     conn = self.lat_conns[cs0][cs1][INH] 
                     prjs[INH] = sim.Projection(pre, post, conn,

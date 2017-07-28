@@ -47,24 +47,25 @@ dir_w2s = 2.
 ssamp_w2s = 4.376069
 
 defaults_retina = {
-                'kernel_width': 3,
+                # 'kernel_width': 3,
                 'kernel_exc_delay': 3.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.,
+                'min_weight': 0.01,
                 'row_step': 1, 'col_step': 1,
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
 
                 'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
-                       'step': 1, 'start':0, 'w2s_mult':1.},
+                       'step': 1, 'start':1, 'w2s_mult':1.},
                 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        'step': 1, 'start':0, 'w2s_mult': 1.},
+                        'step': 2, 'start': 2, 'w2s_mult': 1.},
                 'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        'step': 2, 'start': 0, 'w2s_mult': 1.},
+                        'step': 5, 'start': 5, 'w2s_mult': 1.},
                 'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                        'step': 2, 'start': 0, 'w2s_mult': 1.},
+                        'step': 10, 'start': 15, 'w2s_mult': 1.},
                 # #retina receives 1 spike per change, needs huge weights
                 # 'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
                 #        'step': 1, 'start':0, 'w2s_mult':1.},

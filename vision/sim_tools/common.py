@@ -44,6 +44,9 @@ def conv2one(mat):
 def sum2zero(mat):
     return mat - np.mean(mat)
 
+def sum2one(mat):
+    return mat / np.sum(mat)
+
 def seed_rand(seed=None):
     # if seed is None:
         # time.sleep(0.001)

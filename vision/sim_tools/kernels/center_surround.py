@@ -50,7 +50,7 @@ def gaussian2D(width, sigma):
                        np.arange(-half_width, half_width + 1))
     x_2_plus_y_2 = x**2 + y**2
   
-    norm_weight = (1./(2.*np.pi*sigma_2))
+    norm_weight = (1./(2. * np.pi * sigma_2))
     gauss = (norm_weight*np.exp((-x_2_plus_y_2)/(2.*sigma_2)))
     
     return gauss

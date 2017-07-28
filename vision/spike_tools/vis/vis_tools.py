@@ -8,18 +8,30 @@ SRC, DST, W, DLY = 0, 1, 2, 3
 X, Y, Z = 0, 1, 2
 
 
-def plot_kernel(kernel, title, save=True):
+def plot_kernel(kernel, title, sideview=True, save=True, fw=5):
     from matplotlib.colors import BoundaryNorm
-    # cmap = plt.get_cmap('PuBu_r')
-    cmap = plt.get_cmap('Spectral')
-    cmap = plt.get_cmap('RdYlGn')
-    cmap_list = [cmap(i) for i in range(cmap.N)]
-    custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap.N)
     
-    step =  np.abs( np.min(kernel) ) / 100.
-    neg_bounds = np.arange(np.min(kernel), 0, step)
-    step =  np.abs( np.max(kernel) ) / 100.
-    pos_bounds = np.arange(0, np.max(kernel)+step, step)
+    ncols = 2 if sideview else 1
+    
+    # cmap = plt.get_cmap('PuBu_r')
+    # cmap = plt.get_cmap('Spectral')
+    kmin = np.min(kernel)
+    kmax = np.max(kernel)
+    cmap = plt.get_cmap('RdYlGn')
+    if kmin >= 0 and kmax > 0:
+        cmap_div = 2
+    else:
+        cmap_div = 1
+        
+    cmap_offset = cmap.N - cmap.N//cmap_div
+    cmap_list = [ cmap(cmap_offset + (i//cmap_div)) 
+                                           for i in range(cmap.N) ]
+    custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap.N)
+    nsteps = float(200//cmap_div)
+    step =  np.abs( kmin ) / nsteps
+    neg_bounds = np.arange(kmin, 0, step)
+    step =  np.abs( kmax ) / nsteps
+    pos_bounds = np.arange(0, kmax+step, step)
     bounds = np.concatenate( (neg_bounds, pos_bounds) )
     # print("\n\nplot_kernel")
     # print(bounds)
@@ -28,10 +40,18 @@ def plot_kernel(kernel, title, save=True):
     # bounds = np.insert(bounds, idx, 0)
     norm = BoundaryNorm(bounds, cmap.N)
    
-    fig = plt.figure()
-    ax = plt.subplot(1,1,1)
+    fig = plt.figure(figsize=(fw*ncols + 1, fw))
+    ax = plt.subplot(1,ncols,1)
+    ax.set_title("Kernel")
     img = my_imshow(ax, kernel, cmap=custom_cmap, norm=norm)
     plt.colorbar()
+
+    if sideview:
+        ax = plt.subplot(1,ncols, 2)
+        ax.set_title('Middle row profile')
+        plt.plot(kernel[kernel.shape[0]//2, :])
+        plt.plot([0, kernel.shape[0]-1], [0, 0], '--', color='gray')
+
     plt.suptitle(title)
     if save:
         plt.savefig("%s.png"%(title), dpi=300)
