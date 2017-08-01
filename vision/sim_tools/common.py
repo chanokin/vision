@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import os
 import pickle
+import bz2
 
 DEBUG = True
 
@@ -61,3 +62,19 @@ def print_debug(txt, force=False):
         print("------------------------------------------------------------")
         print(txt)
         print("------------------------------------------------------------")
+
+
+def dump_compressed(data, name):
+    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+        pickle.dump(data, f)
+
+def load_compressed(name):
+    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+        obj = pickle.load(f)
+        return obj
+
+def key_is_true(key, dictionary):
+    return ((key in dictionary) and (dictionary[key] == True))
+
+def key_is_false(key, dictionary):
+    return ((key in dictionary) and (dictionary[key] == False))

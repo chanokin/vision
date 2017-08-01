@@ -441,7 +441,7 @@ def plot_spikes(spike_array, max_y=None, pad = 2, title="", marker='.',
     # plt.xlabel("Time (ms)")
     # plt.ylabel("Neuron id")
     # plt.title(title)
-
+    return n_idx
 
 
 
@@ -465,11 +465,9 @@ def plot_output_spikes(spikes, pad=0, marker='.', color='blue', markersize=4,
     plotter.plot(spike_times, spike_ids, marker, markersize=markersize, 
                  markerfacecolor=color, markeredgecolor=markeredgecolor, 
                  markeredgewidth=markeredgewidth)
-    if plotter != plt:
-        plotter.set_ylim(-pad_y, max_y + pad_y)
-    else:
-        plotter.ylim(-pad_y, max_y + pad_y)
-        
+
+    plotter.margins(0.1, 0.1)
+
     return pad + max_id + 1
 
 

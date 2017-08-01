@@ -48,7 +48,7 @@ ssamp_w2s = 4.376069
 
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 3.,
+                'kernel_exc_delay': 2.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.,
@@ -65,7 +65,7 @@ defaults_retina = {
                 'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
                         'step': 5, 'start': 5, 'w2s_mult': 1.},
                 'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                        'step': 10, 'start': 15, 'w2s_mult': 1.},
+                        'step': 10, 'start': 15, 'w2s_mult': 2.},
                 # #retina receives 1 spike per change, needs huge weights
                 # 'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
                 #        'step': 1, 'start':0, 'w2s_mult':1.},
@@ -103,9 +103,10 @@ defaults_retina = {
                             'subsamp': 1,#2,
                             'w2s': ssamp_w2s,
                             'angle': 11,
-                            'dist': 4,
+                            'dist': 5,
                             'delay_func': lambda dist: dir_delay*dist, 
                                             #20ms = 1000/framerate
+                            'weight_func': lambda d,a,w: w,
                             'step': 3,
                             'start': 0,
                             },

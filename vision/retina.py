@@ -1,5 +1,8 @@
 from sim_tools.common import *
-from sim_tools.kernels import center_surround as krn_cs, gabor as krn_gbr
+from sim_tools.kernels import center_surround as krn_cs, \
+                              gabor as krn_gbr, \
+                              direction_detection as krn_dir
+
 from sim_tools.connectors import kernel_connectors as conn_krn, \
                                  standard_connectors as conn_std, \
                                  direction_connectors as dir_conn, \
@@ -180,13 +183,17 @@ class Retina():
 
         def a2k(a):
             return 'gabor_%d'%( int( a ) )
-        if os.path.isfile("kernel_correlation_cache.pickle"):
-            d = pickle.load(open("kernel_correlation_cache.pickle", 'rb'))
+
+        try:
+            d = load_compressed("kernel_correlation_cache.pickle")
             self.cs = d['ctr_srr']
             self.kernels = d['ctr_srr']
             self.corr = d['cs_corr']
-            self.gab  = d['gab']
+            self.gab = d['gab']
+            self.direction_kernels = d['direction_kernels']
             return 
+        except:
+            pass
 
         krns = {}
         corr = {}
@@ -209,7 +216,7 @@ class Retina():
         self.cs = krns
 
         gab = None
-        if 'gabor' in cfg and cfg['gabor']:
+        if not key_is_false('gabor', cfg):
             angles = self.angles
             gab = krn_gbr.multi_gabor(cfg['gabor']['width'], angles, 
                                       cfg['gabor']['std_dev'], 
@@ -228,6 +235,9 @@ class Retina():
         for cs0 in self.css:
             corr[cs0] = {}
             for cs1 in self.css:
+                if cs0 != cs1 and key_is_false('lateral_competition', cfg):
+                    continue
+
                 print("\t\tGenerating correlation %s <-> %s"%(cs0, cs1))
                 corr[cs0][cs1]  = correlate2d(krns[cs0], krns[cs1], mode='same')
                 # corr[cs0][cs1][:] = sum2zero(corr[cs0][cs1])
@@ -236,7 +246,7 @@ class Retina():
                 corr[cs0][cs1] = sum2one(corr[cs0][cs1])
                 corr[cs0][cs1] *= cfg['w2s']*cfg['corr_w2s_mult']
 
-                if 'plot_kernels' in cfg and cfg['plot_kernels']:
+                if key_is_true('plot_kernels', cfg):
                     plot_kernel(corr[cs0][cs1], "corr_%s_to_%s"%(cs0, cs1))
                     plot_kernel(krns[cs0] - corr[cs0][cs1], "cs_%s_to_%s"%(cs0, cs1))
                 
@@ -252,9 +262,31 @@ class Retina():
         for cs0 in self.css:
             self.cs[cs0] = cap_vals(self.cs[cs0], cfg['min_weight'])
 
-        pickle.dump({'ctr_srr': krns, 'cs_corr': corr, 'gab': gab},
-                    open("kernel_correlation_cache.pickle", 'wb'))
 
+        dir_krns = {}
+        if not key_is_false('direction', cfg):
+            dkrn = krn_dir.direction_kernel
+            d2a = krn_dir.dir_to_ang
+            width = 2*cfg['direction']['dist'] + 1
+            for direction in cfg['direction']['keys']:
+                dir_krns[direction] = dkrn(width, width,
+                                           1, # min delay
+                                           cfg['direction']['weight'],
+                                           d2a(direction),
+                                           cfg['direction']['angle'],
+                                           cfg['direction']['delay_func'],
+                                           cfg['direction']['weight_func'])
+                if key_is_true('plot_kernels', cfg):
+                    plot_kernel(dir_krns[direction][0], 
+                                "direction_kernel_weight_%s"%(direction))
+                    plot_kernel(dir_krns[direction][1], 
+                                "direction_kernel_delay_%s"%(direction))
+
+        dump_compressed({'ctr_srr': krns, 'cs_corr': corr, 
+                         'gab': gab, 'direction_kernels': dir_krns},
+                        "kernel_correlation_cache.pickle")
+
+        self.direction_kernels = dir_krns
         self.kernels = krns
         self.corr = corr
 
@@ -688,29 +720,30 @@ class Retina():
         
         # competition between centre-surround ganglion cells
         lat = {}
-        for k in self.channels:
-            ch = self.channels[k]
-            lat[ch] = {}
-            for cs0 in self.lat_conns:
-                lat[ch][cs0] = {}
-                for cs1 in self.lat_conns[cs0]:
-                    print("\t\tlateral competition %s: %s -> %s"%
-                          (ch, cs0, cs1))
-                    prjs = {}
-                    pre = self.pops[ch][cs0]['ganglion']
-                    post = self.pops[ch][cs1]['ganglion']
-                    # conn = self.lat_conns[cs0][cs1][EXC] 
+        if 'lateral_competition' in cfg and cfg['lateral_competition']:
+            for k in self.channels:
+                ch = self.channels[k]
+                lat[ch] = {}
+                for cs0 in self.lat_conns:
+                    lat[ch][cs0] = {}
+                    for cs1 in self.lat_conns[cs0]:
+                        print("\t\tlateral competition %s: %s -> %s"%
+                            (ch, cs0, cs1))
+                        prjs = {}
+                        pre = self.pops[ch][cs0]['ganglion']
+                        post = self.pops[ch][cs1]['ganglion']
+                        # conn = self.lat_conns[cs0][cs1][EXC] 
 
-                    # prjs[EXC] = sim.Projection(pre, post, conn,
-                    #                     target='excitatory',
-                    #                     label='lateral exc %s -> %s'%(cs0, cs1))
-                    
-                    conn = self.lat_conns[cs0][cs1][INH] 
-                    prjs[INH] = sim.Projection(pre, post, conn,
-                                        target='inhibitory',
-                                        label='lateral inh %s -> %s'%(cs0, cs1))
+                        # prjs[EXC] = sim.Projection(pre, post, conn,
+                        #                     target='excitatory',
+                        #                     label='lateral exc %s -> %s'%(cs0, cs1))
+                        
+                        conn = self.lat_conns[cs0][cs1][INH] 
+                        prjs[INH] = sim.Projection(pre, post, conn,
+                                            target='inhibitory',
+                                            label='lateral inh %s -> %s'%(cs0, cs1))
 
-                    lat[ch][cs0][cs1] = prjs
+                        lat[ch][cs0][cs1] = prjs
 
         self.projs['lateral'] = lat
 
