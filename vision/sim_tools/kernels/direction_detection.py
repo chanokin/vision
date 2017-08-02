@@ -3,21 +3,21 @@ import numpy as np
 
 def dir_to_ang(direction):
     ang = 0
-    if   direction.lower() == 'e' or direction.lower() == 'east':
+    if   direction.lower() == 'w'  or direction.lower() == 'west':
         ang = 0
-    elif direction.lower() == 'n' or direction.lower() == 'north':
-        ang = 90
-    elif direction.lower() == 'w' or direction.lower() == 'west':
-        ang = 180
-    elif direction.lower() == 's' or direction.lower() == 'south':
-        ang = 270
-    elif direction.lower() == 'ne' or direction.lower() == 'north east':
-        ang = 45
-    elif direction.lower() == 'nw' or direction.lower() == 'north west':
-        ang = 135
     elif direction.lower() == 'sw' or direction.lower() == 'south west':
-        ang = 225
+        ang = 45
+    elif direction.lower() == 's'  or direction.lower() == 'south':
+        ang = 90
     elif direction.lower() == 'se' or direction.lower() == 'south east':
+        ang = 135
+    elif direction.lower() == 'e'  or direction.lower() == 'east':
+        ang = 180
+    elif direction.lower() == 'ne' or direction.lower() == 'north east':
+        ang = 225
+    elif direction.lower() == 'n'  or direction.lower() == 'north':
+        ang = 270
+    elif direction.lower() == 'nw' or direction.lower() == 'north west':
         ang = 315
     else:
         np.random.seed()

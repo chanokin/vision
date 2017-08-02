@@ -21,6 +21,7 @@ if sys.version_info.major == 2:
             return xrange(start, stop, step)
 
 EXC, INH = 0, 1
+WEIGHT, DELAY = 0, 1
 ROW, COL = 0, 1
 OFF, ON = 0, 1
 D2R = np.pi/180.

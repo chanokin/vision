@@ -3,11 +3,14 @@ import pylab as plt
 # import vision.sim_tools.connectors.kernel_connectors as kconn
 from vision.spike_tools.vis import my_imshow, plot_spikes, \
                                    plot_output_spikes, \
-                                   imgs_in_T_from_spike_array
+                                   imgs_in_T_from_spike_array, \
+                                   images_to_video
+
 # from vision.sim_tools.vis import plot_connector_3d
 # import vision.sim_tools.kernels.center_surround as csgen
 # import vision.sim_tools.kernels.gabor as gabgen
 from vision.sim_tools.connectors import mapping_funcs as mapf
+from vision.sim_tools.common import dump_compressed, load_compressed
 
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 

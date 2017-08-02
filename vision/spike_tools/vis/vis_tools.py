@@ -644,6 +644,29 @@ def build_gif(imgs, filename='', show_gif=True, save_gif=True, title='',
 
 
 
+def images_to_video(images, fps=100, title='output video', scale=10, outdir='./',
+                    off_images=None):
+    import cv2
+    import os
+    img_h, img_w, channels = images[0].shape
+    mspf = int(1000./fps)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    title = title.replace(' ', '_')
+    title = title.replace(':', '_--_')
+    vid_shape = (img_w*scale, img_h*scale)
+    vid_out = cv2.VideoWriter(os.path.join(outdir,"%s.m4v"%title), 
+                              fourcc, fps, vid_shape)
+    num_imgs = len(images)
+
+    for i in range(num_imgs):
+        if off_images is not None:
+            images[i][:, :, 0] = off_images[i][:, :, 0]
+        vid_out.write( cv2.resize(cv2.cvtColor(images[i], cv2.COLOR_BGR2RGB), 
+                       vid_shape, interpolation=cv2.INTER_NEAREST) )
+    
+    vid_out.release()
+    
+    return
 
 # === ------------------------------------------------------------ === #
 

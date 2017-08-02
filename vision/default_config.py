@@ -43,7 +43,7 @@ wta_inh_cell_params = { 'cm': 0.3,  # nF
 
 g_w2s = 4.376069
 inh_w2s = 4.376069
-dir_w2s = 2.
+dir_w2s = 0.9
 ssamp_w2s = 4.376069
 
 defaults_retina = {
@@ -89,7 +89,7 @@ defaults_retina = {
 
                 'direction': {'keys': [
                                         'E', 
-                                        # 'W',
+                                        'W',
                                         # 'N', 
                                         # 'S',
                                         #'NW', 'SW', 'NE', 'SE',
@@ -101,8 +101,8 @@ defaults_retina = {
                             'weight': dir_w2s,
                             'delays': [1, 4, 6, 8],#, 3, 4 ],
                             'subsamp': 1,#2,
-                            'w2s': ssamp_w2s,
-                            'angle': 11,
+                            # 'w2s': ssamp_w2s,
+                            'angle': 10,
                             'dist': 5,
                             'delay_func': lambda dist: dir_delay*dist, 
                                             #20ms = 1000/framerate
