@@ -8,16 +8,17 @@ SRC, DST, W, DLY = 0, 1, 2, 3
 X, Y, Z = 0, 1, 2
 
 
-def plot_kernel(kernel, title, sideview=True, save=True, fw=5):
+def plot_kernel(kernel, title, sideview=True, diagonal=True, save=True, fw=5,
+                cmap_name='RdYlGn'):
     from matplotlib.colors import BoundaryNorm
     
     ncols = 2 if sideview else 1
     
-    # cmap = plt.get_cmap('PuBu_r')
+    # cmap = plt.get_cmap('PuBu')
     # cmap = plt.get_cmap('Spectral')
     kmin = np.min(kernel)
     kmax = np.max(kernel)
-    cmap = plt.get_cmap('RdYlGn')
+    cmap = plt.get_cmap(cmap_name)
     if kmin >= 0 and kmax > 0:
         cmap_div = 2
     else:
@@ -26,6 +27,11 @@ def plot_kernel(kernel, title, sideview=True, save=True, fw=5):
     cmap_offset = cmap.N - cmap.N//cmap_div
     cmap_list = [ cmap(cmap_offset + (i//cmap_div)) 
                                            for i in range(cmap.N) ]
+    # print(cmap_list[0])
+    # import sys
+    # sys.exit(0)
+    # print(len(cmap_list), cmap_div, len(cmap_list)//2, 2 - cmap_div)
+    cmap_list[(len(cmap_list)//2)*(2 - cmap_div)] = (1., 1., 1., 1.)
     custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap.N)
     nsteps = float(200//cmap_div)
     step =  np.abs( kmin ) / nsteps
@@ -45,18 +51,26 @@ def plot_kernel(kernel, title, sideview=True, save=True, fw=5):
     ax.set_title("Kernel")
     img = my_imshow(ax, kernel, cmap=custom_cmap, norm=norm)
     plt.colorbar()
-
+    plt.margins(0.1, 0.1)
     if sideview:
         ax = plt.subplot(1,ncols, 2)
         ax.set_title('Middle row profile')
-        plt.plot(kernel[kernel.shape[0]//2, :])
+        if diagonal:
+            plt.plot(kernel[np.arange(kernel.shape[0]), 
+                            np.arange(kernel.shape[0])])
+        else:
+            plt.plot(kernel[kernel.shape[0]//2, :])
         plt.plot([0, kernel.shape[0]-1], [0, 0], '--', color='gray')
+    
+    plt.margins(0.1, 0.1)
 
     plt.suptitle(title)
     if save:
         plt.savefig("%s.png"%(title), dpi=300)
     else:
         plt.show()
+    
+    
     plt.close()
 
 def my_imshow(ax, img, cmap="Greys_r", interpolation="none", 

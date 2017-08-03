@@ -30,24 +30,31 @@ def dir_to_ang(direction):
 def direction_kernel(width, height, min_delay=1, weight=2.,
                      dir_ang=0., delta_ang=15.,
                      delay_func=lambda x: x, 
-                     weight_func=lambda d, a, w: w/(a*d)):
+                     weight_func=lambda d, a, w: w/(a*d),
+                     use_euclidean_dist=False):
     min_ang = dir_ang - delta_ang
     max_ang = dir_ang + delta_ang
     hw = width//2
     hh = height//2
     weights = np.zeros((height, width))
-    delays  = np.ones((height, width))
+    delays  = np.zeros((height, width))
 
     for r in range(height):
         dr = hh - r
         for c in range(width):
             dc = hw - c
-            dist = np.sqrt(dr**2 + dc**2)
+            if use_euclidean_dist:
+                dist = np.sqrt(dr**2 + dc**2)
+            else:
+                dist = np.abs(dr) + np.abs(dc)
+
             ang = np.rad2deg( np.arctan2(dc, dr) )
             if ang > max_ang or min_ang > ang:
                 continue
-
+            ang = np.abs(ang - dir_ang)
+            # print(dist, weight, ang)
             weights[r, c] = weight_func(dist, ang, weight)
+            # print(weights[r, c])
             delays[r, c]  = np.round(min_delay + delay_func(dist))
 
     return weights, delays

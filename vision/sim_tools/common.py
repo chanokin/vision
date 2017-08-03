@@ -79,3 +79,9 @@ def key_is_true(key, dictionary):
 
 def key_is_false(key, dictionary):
     return ((key in dictionary) and (dictionary[key] == False))
+
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1

@@ -54,20 +54,26 @@ class Retina():
         self.css = [ k for k in cfg.keys() if 'cs' in k ]
 
         for ccss in self.css:
-            self.shapes[self._right_key(ccss)]  = self.gen_shape(width, height, 
-                                                             cfg[ccss]['step'],
-                                                             cfg[ccss]['start'])
+            key = self._right_key(ccss)
+            self.shapes[key]  = self.gen_shape(width, height, 
+                                               cfg[ccss]['step'], 
+                                               cfg[ccss]['start'])
 
         if 'direction' in cfg and cfg['direction']:
-            self.shapes[self._right_key('direction')] = self.gen_shape(
-                                                          width, height, 
-                                                          cfg['direction']['step'],
-                                                          cfg['direction']['start'])
+            frm = cfg['direction']['sample_from']
+            key = self._right_key('direction')
+            self.shapes[key] = self.gen_shape(self.shapes[frm]['width'], 
+                                              self.shapes[frm]['height'], 
+                                              cfg['direction']['step'],
+                                              cfg['direction']['start'])
 
         if 'gabor' in cfg and cfg['gabor']:
-            self.shapes[self._right_key('gabor')] = self.gen_shape(width, height, 
-                                                             cfg['gabor']['step'],
-                                                             cfg['gabor']['start'])
+            frm = cfg['gabor']['sample_from']
+            key = self._right_key('gabor')
+            self.shapes[key] = self.gen_shape(self.shapes[frm]['width'], 
+                                              self.shapes[frm]['height'], 
+                                              cfg['gabor']['step'],
+                                              cfg['gabor']['start'])
 
             self.ang_div = deg2rad(180./cfg['gabor']['num_divs'])
             self.angles = [i*self.ang_div for i in range(cfg['gabor']['num_divs'])]
@@ -246,7 +252,10 @@ class Retina():
                     continue
 
                 print("\t\tGenerating correlation %s <-> %s"%(cs0, cs1))
-                corr[cs0][cs1]  = correlate2d(krns[cs0], krns[cs1], mode='same')
+                # corr[cs0][cs1]  = correlate2d(krns[cs0], krns[cs1], mode='same')
+                corr[cs0][cs1]  = krn_cs.correlationGaussian2D(
+                                        cfg[cs0]['width'], cfg[cs0]['std_dev'],
+                                        cfg[cs1]['width'], cfg[cs1]['std_dev'])
                 # corr[cs0][cs1][:] = sum2zero(corr[cs0][cs1])
                 # corr[cs0][cs1][:], _ = conv2one(corr[cs0][cs1])
                 # corr[cs0][cs1] *= cfg['w2s']*cfg['corr_w2s_mult']
@@ -265,7 +274,7 @@ class Retina():
                 # print(np.sum(corr[cs0][cs1] == 0))
                 # print(np.sum(corr[cs0][cs1] < 0))
                 corr[cs0][cs1] = cap_vals(corr[cs0][cs1], cfg['min_weight'])
-                
+
         
         for cs0 in self.css:
             self.cs[cs0] = cap_vals(self.cs[cs0], cfg['min_weight'])
@@ -291,12 +300,14 @@ class Retina():
                                     cfg['direction']['weight_func'])
 
                 if key_is_true('plot_kernels', cfg):
-                    print(dir_krns[dk][WEIGHT])
+                    # print(dir_krns[dk][WEIGHT])
                     plot_kernel(dir_krns[dk][WEIGHT], 
-                                "direction_kernel_weight_%s"%(direction))
-                    print(dir_krns[dk][DELAY])
+                                "direction_kernel_weight_%s"%(direction),
+                                diagonal=False)
+                    # print(dir_krns[dk][DELAY])
                     plot_kernel(dir_krns[dk][DELAY], 
-                                "direction_kernel_delay_%s"%(direction))
+                                "direction_kernel_delay_%s"%(direction),
+                                diagonal=False)
 
         dump_compressed({'ctr_srr': krns, 'cs_corr': corr, 
                          'gab': gab, 'direction_kernels': dir_krns},
@@ -340,8 +351,7 @@ class Retina():
                     #                         generate_on_machine=True)
                     inh = False
                     conn = { EXC: exc, 
-                             INH: inh 
-                           }
+                             INH: inh }
                 else:
                     conns = krn_conn(self.width, self.height, 
                                      self.kernels[k],
@@ -380,8 +390,7 @@ class Retina():
                         exc =  sim.OneToOneConnector(weights=cfg['w2s'],
                                                      delays=cfg['kernel_exc_delay'])
                         conn = { EXC: exc, 
-                                 INH: inh 
-                               }
+                                 INH: inh  }
                     else:
                         conns = krn_conn(self.width, self.height, krn,
                                          cfg['kernel_exc_delay'],
@@ -406,10 +415,14 @@ class Retina():
                 for dk in cfg['direction']['keys']:
                     print("\t\tdirection: %s"%(dk))
                     k = d2k(dk)
-                    step = self.sample_step(self._right_key(k))
-                    start = self.sample_start(self._right_key(k))
-                    post_shape = (shapes[self._right_key(k)]['height'], 
-                                  shapes[self._right_key(k)]['width'])
+                    frm = cfg['direction']['sample_from']
+                    pre_key = self._right_key(frm)
+                    pre_shape = (shapes[pre_key]['height'], shapes[pre_key]['width'])
+                    post_key = self._right_key(k)
+                    step = self.sample_step(post_key)
+                    start = self.sample_start(post_key)
+                    post_shape = (shapes[post_key]['height'], 
+                                  shapes[post_key]['width'])
                     krn = self.direction_kernels[k][WEIGHT]
                     dly = self.direction_kernels[k][DELAY]
                     inh_krn = np.rot90(krn, 2) + cfg['kernel_exc_delay']
@@ -417,14 +430,14 @@ class Retina():
 
                     if self.sim.__name__ == 'pyNN.spiNNaker':
 
-                        exc = sim.KernelConnector(self.shapes['orig'], post_shape,
+                        exc = sim.KernelConnector(pre_shape, post_shape,
                                                   krn.shape,
                                                   post_sample_steps=(step, step), 
                                                   post_start_coords=(start, start),
                                                   weights=krn*(krn > 0), 
                                                   delays=dly, 
                                                   generate_on_machine=True)
-                        inh = sim.KernelConnector(self.shapes['orig'], post_shape,
+                        inh = sim.KernelConnector(pre_shape, post_shape,
                                                   krn.shape,
                                                   post_sample_steps=(step, step), 
                                                   post_start_coords=(start, start),
@@ -432,8 +445,7 @@ class Retina():
                                                   delays=inh_dly, 
                                                   generate_on_machine=True)
 
-
-                    self.conns[ch][k] = {EXC: exc, INH: inh}
+                        self.conns[ch][k] = {EXC: exc, INH: inh}
 
 
 ######################################

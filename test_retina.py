@@ -82,11 +82,11 @@ num_neurons = img_w*img_h*2
 n_cam_neurons = 1 << ( int(np.ceil(np.log2(img_h)))  + 
                        int(np.ceil(np.log2(img_w))) + 1 )
 fps = 100
-vid_fps = 30 # this will slow video down
+vid_fps = 60 # this will slow video down
 vid_scale = 20
 frames = 200
-# frames = 300
-frames = 500
+frames = 300
+# frames = 500
 
 thresh = int(255*0.05) # just for plotting
 # thresh = int(255*0.1)
@@ -144,6 +144,7 @@ on_time_ms  = int( frames*(1000./fps) ) # total simulation time
 ftime_ms    = int( 1000./fps )*1 # how many milliseconds (from frames) to plot
 off_time_ms = 0
 start_time  = 0
+delete_before = 500
 delete_before = 300
 # spikes_dir = os.path.join(mnist_dir, '')
 spikes_dir = mnist_dir
@@ -275,7 +276,7 @@ if simulate_retina:
             images_to_video(on_imgs, vid_fps, 
                             "out_video_spikes_filter_%s_competition_%s"%
                                        (pop, 'on' if competition_on else 'off'),
-                            scale=vid_scale)
+                            scale=vid_scale, off_images=off_imgs)
 
         #bipolar population
         if 'cam' in pop:
@@ -320,7 +321,7 @@ if simulate_retina:
             images_to_video(on_imgs, vid_fps, 
                             "gss_video_spikes_filter_%s_competition_%s"%
                                        (pop, 'on' if competition_on else 'off'),
-                            scale=vid_scale)
+                            scale=vid_scale, off_images=off_imgs)
         plt.figure(1)
         plt.plot([t for (_, t) in on_spikes], 
                     [i for (i, _) in on_spikes], '.', 

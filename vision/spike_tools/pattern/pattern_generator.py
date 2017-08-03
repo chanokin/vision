@@ -9,7 +9,7 @@ from numpy import float64
 from numpy import random
 import pickle
 import glob
-
+from vision.sim_tools.common import *
 
 LESS_THAN     = "less than"
 GREATER_THAN  = "greater than"
@@ -437,26 +437,35 @@ def img_spikes_from_to(path, num_neurons,
     f = None
     spks = [ [] for i in range(num_neurons) ]
     if len(spk_files) == 0:
-        raise Exception("Unable to locate files in dir %s"%
-                        path)
+        raise Exception("Unable to locate files in dir:\n\t\t%s"%path)
+
+    import sys
+    import io
     t = float(start_time)
     for fname in spk_files[start:end]:
         # print(fname)
         # spks[:] = [ [] for i in range(num_neurons) ]
-        f = open(fname, 'r')
-
+        n_lines = file_len(fname)
+        
+        # f = open(fname, 'r')
+        f = io.open(fname, 'r', buffering=1)
+        line_n = 2
         for line in f:
+            sys.stdout.write("\r%03.2f%%"%(100.*float(line_n)/n_lines))
+            sys.stdout.flush()
+            line_n += 1
+
             np.random.seed()
-            rand_dt = np.random.randint(-3, 4) #[-2, -1, 0, 1, 2] or [..., 3)
+            rand_dt = np.random.randint(-1, 2) #[-2, -1, 0, 1, 2] or [..., 3)
 
             vals = line.split(' ')
-            nrn_id, spk_time = int(vals[0]), int( float(vals[1]) + t )
+            nrn_id, spk_time = int(vals[0]), int( float(vals[1]) )
             # print("id = %s, t = %s"%(vals[0], vals[1]))
             if nrn_id > num_neurons:
                 raise Exception("Neuron Id from file is greater than number of "
                                 "neurons given in the argument (%d > %d)"%
                                 (nrn_id, num_neurons) )
-            
+
             if noise:
                 np.random.seed()
                 dice_roll = np.random.uniform(0., 1.)
@@ -464,16 +473,20 @@ def img_spikes_from_to(path, num_neurons,
                     continue
 
             rspk_time = spk_time + rand_dt
-            if rspk_time in spks[nrn_id]:
+               
+            if rspk_time >= on_time_ms:
                 continue
-                
-            if rspk_time > (t + on_time_ms):
-                continue
+
             if rspk_time < delete_before:
                 continue
 
+            if rspk_time in spks[nrn_id]:
+                continue
+
             rspk_time -= delete_before
+            rspk_time += t
             spks[nrn_id].append(rspk_time)
+
         f.close()
         # print(fname, t)
         # t += on_time_ms + off_time_ms
@@ -497,6 +510,7 @@ def img_spikes_from_to(path, num_neurons,
             
         spks[nrn_id].sort()
 
+    print()
     return spks
 
 

@@ -55,7 +55,30 @@ def gaussian2D(width, sigma):
     
     return gauss
 
+def correlationGaussian2D(width0, sigma0, width1, sigma1, 
+                          use_first_width=True):
+    '''Create a matrix with values that follow the correlation of two
+       2D Gaussian functions. 
+       :param width: width of matrix
+       :param sigma: standard deviation for the Gaussian
+  
+       :return gauss: 2D Gaussian
+    '''
+    if use_first_width:
+        width = width0
+    else:
+        width = max(width0, width1)
 
+    half_width = width//2
+    sigma_2 = (sigma0**2 + sigma1**2)
+    x, y = np.meshgrid(np.arange(-half_width, half_width + 1),
+                       np.arange(-half_width, half_width + 1))
+    x_2_plus_y_2 = x**2 + y**2
+  
+    norm_weight = (1./(2. * np.pi * sigma_2))
+    gauss = (norm_weight*np.exp((-x_2_plus_y_2)/(2.*sigma_2)))
+    
+    return gauss
 def split_center_surround_kernel(width=3, ctr_sigma=0.8, sigma_mult=6.7):
     
     cs_kernel = None

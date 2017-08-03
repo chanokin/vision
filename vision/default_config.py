@@ -2,7 +2,7 @@ from sim_tools.connectors.mapping_funcs import  row_col_to_input, \
                                                 row_col_to_input_breakout
 import numpy as np
 frame_rate = 100
-dir_delay = int(1000./frame_rate)
+dir_delay = int((1000./frame_rate)*0.5)
 
 exc_cell = "IF_curr_exp"
 exc_cell_params = { 'cm': 0.35,  # nF
@@ -43,7 +43,7 @@ wta_inh_cell_params = { 'cm': 0.3,  # nF
 
 g_w2s = 4.376069
 inh_w2s = 4.376069
-dir_w2s = 0.9
+dir_w2s = 2.1
 ssamp_w2s = 4.376069
 
 defaults_retina = {
@@ -102,13 +102,14 @@ defaults_retina = {
                             'delays': [1, 4, 6, 8],#, 3, 4 ],
                             'subsamp': 1,#2,
                             # 'w2s': ssamp_w2s,
-                            'angle': 10,
+                            'angle': 60,
                             'dist': 5,
                             'delay_func': lambda dist: dir_delay*dist, 
                                             #20ms = 1000/framerate
-                            'weight_func': lambda d,a,w: w,
-                            'step': 3,
+                            'weight_func': lambda d,a,w: w/(1.+a),
+                            'step': 1,
                             'start': 0,
+                            'sample_from': 'cs',
                             },
 
                 # 'input_mapping_func': row_col_to_input_breakout,
