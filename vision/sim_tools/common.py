@@ -1,23 +1,27 @@
 from __future__ import print_function
 import numpy as np
 import sys
+import os
+import pickle
+import bz2
 
 DEBUG = True
 
 if sys.version_info.major == 2:
-  def range(start, stop=None, step=None):
-      start = int(start)
-      if stop is None:
-          return xrange(start)
-      elif step is None:
-          step = int(stop)
-          return xrange(start, stop)
-      else:
-          stop = int(stop)
-          step = int(step)
-          return xrange(start, stop, step)
+    def range(start, stop=None, step=None):
+        start = int(start)
+        if stop is None:
+            return xrange(start)
+        elif step is None:
+            step = int(stop)
+            return xrange(start, stop)
+        else:
+            stop = int(stop)
+            step = int(step)
+            return xrange(start, stop, step)
 
 EXC, INH = 0, 1
+WEIGHT, DELAY = 0, 1
 ROW, COL = 0, 1
 OFF, ON = 0, 1
 D2R = np.pi/180.
@@ -32,15 +36,18 @@ def rad2deg(r):
     return R2D*r
 
 def normalize(mat):
-  w = 1./np.sum(np.abs(mat))
-  return mat*w, w
+    w = 1./np.sum(np.abs(mat))
+    return mat*w, w
 
 def conv2one(mat):
-  w = 1./np.sqrt(np.sum(mat**2))
-  return mat*w, w
+    w = 1./np.sqrt(np.sum(mat**2))
+    return mat*w, w
 
 def sum2zero(mat):
-  return mat - np.mean(mat)
+    return mat - np.mean(mat)
+
+def sum2one(mat):
+    return mat / np.sum(mat)
 
 def seed_rand(seed=None):
     # if seed is None:
@@ -56,3 +63,25 @@ def print_debug(txt, force=False):
         print("------------------------------------------------------------")
         print(txt)
         print("------------------------------------------------------------")
+
+
+def dump_compressed(data, name):
+    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+        pickle.dump(data, f)
+
+def load_compressed(name):
+    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+        obj = pickle.load(f)
+        return obj
+
+def key_is_true(key, dictionary):
+    return ((key in dictionary) and (dictionary[key] == True))
+
+def key_is_false(key, dictionary):
+    return ((key in dictionary) and (dictionary[key] == False))
+
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
