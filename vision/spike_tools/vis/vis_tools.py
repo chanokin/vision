@@ -29,13 +29,13 @@ def plot_kernel(kernel, title, sideview=True, diagonal=True, save=True, fw=5,
     half = cmap_N//2
     if cmap_div == 2:
         cmap_list = [(1., 1., 1., 1.)] + \
-                    [ (0.1,  1., 0.1, float(i + 1.)/cmap_N)
+                    [ (0.1,  1., 0.1, (float(i + 1.)/cmap_N)*0.8 + 0.2)
                                            for i in range(cmap_N-1) ]
     else:
-        cmap_list = [ (1., 0.1, 0.1, float(half - i)/half)
+        cmap_list = [ (1., 0.1, 0.1, (float(half - i)/half)*0.8 + 0.2)
                                            for i in range(half) ] + \
                     [(1., 1., 1., 1.)] + \
-                    [ (0.1, 1., 0.1, float(i + 1.)/half)
+                    [ (0.1, 1., 0.1, (float(i + 1.)/half)*0.8 + 0.2)
                                            for i in range(half) ]
     custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap_N)
     nsteps = float(200//cmap_div)
