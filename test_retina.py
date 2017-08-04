@@ -99,7 +99,7 @@ thresh = int(255*0.05) # just for plotting
 #             "t10k/"
 #             # "t10k/" "train/"
 
-mnist_dir = "../../pyDVS/mnist_spikes/" + \
+mnist_dir = "../pyDVS/mnist_spikes/" + \
             "mnist_behave_SACCADE_pol_MERGED" + \
             "_enc_RATE_thresh_12_hist_99_00" + \
             "_inh_False___" + \
@@ -107,12 +107,12 @@ mnist_dir = "../../pyDVS/mnist_spikes/" + \
             "t10k/"
             # "t10k/" "train/"
 
-mnist_dir = "../../pyDVS/mnist_spikes/" + \
-            "mnist_behave_TRAVERSE_pol_MERGED" + \
-            "_enc_RATE_thresh_12_hist_99_00" + \
-            "_inh_False___" + \
-            "500_frames_at_100fps_%dx%d_res_spikes/" + \
-            "t10k/"
+# mnist_dir = "../../pyDVS/mnist_spikes/" + \
+#             "mnist_behave_TRAVERSE_pol_MERGED" + \
+#             "_enc_RATE_thresh_12_hist_99_00" + \
+#             "_inh_False___" + \
+#             "500_frames_at_100fps_%dx%d_res_spikes/" + \
+#             "t10k/"
             # "t10k/" "train/"
 
 # mnist_dir = "../../pyDVS/mnist_spikes/" + \
@@ -130,7 +130,7 @@ mnist_dir = mnist_dir%(img_w, img_h)
 #
 ###############################################################################
 #
-plot_cam_spikes = True if 1 else False
+plot_cam_spikes = True if 0 else False
 simulate_retina = True if 1 else False
 competition_on  = True if 1 else False
 direction_on    = True if 1 else False

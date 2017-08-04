@@ -4,6 +4,7 @@ import sys
 import os
 import pickle
 import bz2
+import re
 
 DEBUG = True
 
@@ -19,6 +20,13 @@ if sys.version_info.major == 2:
             stop = int(stop)
             step = int(step)
             return xrange(start, stop, step)
+
+def is_spinnaker(sim):
+    if re.search(r'sp[iy]nnaker', sim.__name__, re.I | re.M):
+        return True
+    else:
+        return False
+
 
 EXC, INH = 0, 1
 WEIGHT, DELAY = 0, 1

@@ -52,7 +52,7 @@ defaults_retina = {
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.,
-                'min_weight': 0.01,
+                'min_weight': 0.1,
                 'row_step': 1, 'col_step': 1,
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,

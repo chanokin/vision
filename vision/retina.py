@@ -194,7 +194,7 @@ class Retina():
         def cap_vals(k, mw):
             return k*(k > mw)
 
-        try:
+        if os.path.isfile("kernel_correlation_cache.pickle.bz2"):
             d = load_compressed("kernel_correlation_cache.pickle")
             self.cs = d['ctr_srr']
             self.kernels = d['ctr_srr']
@@ -202,8 +202,6 @@ class Retina():
             self.gab = d['gab']
             self.direction_kernels = d['direction_kernels']
             return 
-        except:
-            pass
 
         krns = {}
         corr = {}
@@ -334,7 +332,7 @@ class Retina():
                 post_shape = (shapes[k]['height'], shapes[k]['width'])
                 krn = self.kernels[k]
 
-                if self.sim.__name__ == 'pyNN.spiNNaker':
+                if is_spinnaker(self.sim):
 
                     exc = sim.KernelConnector(self.shapes['orig'], post_shape,
                                               krn.shape,
@@ -378,7 +376,7 @@ class Retina():
                     step = self.sample_step(k)
                     start = self.sample_start(k)
 
-                    if self.sim.__name__ == 'pyNN.spiNNaker':
+                    if is_spinnaker(self.sim):
                         pre_shape = self.shapes['orig']
                         post_shape = (shapes[k]['height'], shapes[k]['width'])
                         inh =  sim.KernelConnector(pre_shape, post_shape,
@@ -428,7 +426,7 @@ class Retina():
                     inh_krn = np.rot90(krn, 2) + cfg['kernel_exc_delay']
                     inh_dly = np.rot90(krn, 2)
 
-                    if self.sim.__name__ == 'pyNN.spiNNaker':
+                    if is_spinnaker(self.sim):
 
                         exc = sim.KernelConnector(pre_shape, post_shape,
                                                   krn.shape,
@@ -456,7 +454,7 @@ class Retina():
         self.extra_conns = {}
         #cam to inh-version of cam
         # if self.dvs_mode = dvs_modes[MERGED]:
-        if sim.__name__ == 'pyNN.spiNNaker':
+        if is_spinnaker(sim):
             conns = sim.OneToOneConnector(weights=cfg['inhw'], 
                                       delays=cfg['kernel_inh_delay'],
                                       generate_on_machine=True)
@@ -468,7 +466,7 @@ class Retina():
         #bipolar to interneuron 
         self.extra_conns['inter'] = {}
         for k in css:
-            if sim.__name__ == 'pyNN.spiNNaker':
+            if is_spinnaker(sim):
                 conns = sim.OneToOneConnector(weights=cfg['inhw'], 
                                               delays=cfg['kernel_inh_delay'],
                                               generate_on_machine=True)
@@ -479,7 +477,7 @@ class Retina():
         
         if 'gabor' in cfg and cfg['gabor']:
             size = self.pop_size('gabor')
-            if sim.__name__ == 'pyNN.spiNNaker':
+            if is_spinnaker(sim):
                 conns = sim.OneToOneConnector(weights=cfg['inhw'], 
                                               delays=cfg['kernel_inh_delay'],
                                               generate_on_machine=True)
@@ -492,7 +490,7 @@ class Retina():
         if not key_is_false('direction', cfg):
             # print_debug('attempting to build direction EXTRA connectors')
             size = self.pop_size('direction')
-            if sim.__name__ == 'pyNN.spiNNaker':
+            if is_spinnaker(sim):
                 conns = sim.OneToOneConnector(weights=cfg['inhw'], 
                                               delays=cfg['kernel_inh_delay'],
                                               generate_on_machine=True)
@@ -511,7 +509,7 @@ class Retina():
             # print("---------------------------------------------------------")
             # print(krn)
             # print("---------------------------------------------------------")
-            if self.sim.__name__ == 'pyNN.spiNNaker':
+            if is_spinnaker(self.sim):
                 post_shape = (shapes[k]['height'], shapes[k]['width'])
 
                 # exc = sim.KernelConnector(post_shape, post_shape, krn.shape,
@@ -561,7 +559,7 @@ class Retina():
                      shapes[self._right_key(k)]['width'])
             krn = self.corr['cs']['cs']
 
-            if self.sim.__name__ == 'pyNN.spiNNaker':
+            if is_spinnaker(self.sim):
                 exc = sim.OneToOneConnector(weights=cfg['w2s'],
                                             delays=cfg['kernel_exc_delay'],
                                             generate_on_machine=True)
@@ -596,7 +594,7 @@ class Retina():
                     post_start = (self.sample_start(cs1), self.sample_start(cs1))
                     post_step  = (self.sample_step(cs1), self.sample_step(cs1))
                     krn = self.corr[cs0][cs1]
-                    if self.sim.__name__ == 'pyNN.spiNNaker':
+                    if is_spinnaker(self.sim):
 
                         conns = {}
 

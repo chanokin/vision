@@ -4,7 +4,7 @@ import time
 import sys
 import pickle
 
-from pyNN import spiNNaker as sim
+import spynnaker7.pyNN as sim
 # from pyNN import nest as sim
 # import spynnaker_extra_pynn_models as q
 # sim = None
@@ -101,7 +101,8 @@ target.record()
 
 
 src_to_tgt = sim.Projection(source, target,
-                            sim.OneToOneConnector(weights=w2s),
+                            sim.OneToOneConnector(weights=w2s, 
+                                                  generate_on_machine=True),
                             target='excitatory')
 
 
