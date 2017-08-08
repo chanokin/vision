@@ -84,6 +84,7 @@ n_cam_neurons = 1 << ( int(np.ceil(np.log2(img_h)))  +
 fps = 100
 vid_fps = 60 # this will slow video down
 vid_scale = 20
+thresh_scale = 1
 frames = 200
 frames = 300
 # frames = 500
@@ -107,12 +108,20 @@ mnist_dir = "../pyDVS/mnist_spikes/" + \
             "t10k/"
             # "t10k/" "train/"
 
-# mnist_dir = "../../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_TRAVERSE_pol_MERGED" + \
-#             "_enc_RATE_thresh_12_hist_99_00" + \
-#             "_inh_False___" + \
-#             "500_frames_at_100fps_%dx%d_res_spikes/" + \
-#             "t10k/"
+mnist_dir = "../pyDVS/mnist_spikes/" + \
+            "mnist_behave_TRAVERSE_pol_MERGED" + \
+            "_enc_RATE_thresh_12_hist_99_00" + \
+            "_inh_False___" + \
+            "500_frames_at_100fps_%dx%d_res_spikes/" + \
+            "t10k/"
+
+mnist_dir = "../pyDVS/mnist_spikes/" + \
+            "mnist_behave_TRAVERSE_pol_MERGED" + \
+            "_enc_TIME_thresh_12_hist_99_00" + \
+            "_inh_False___" + \
+            "500_frames_at_100fps_%dx%d_res_spikes/" + \
+            "t10k/"
+
             # "t10k/" "train/"
 
 # mnist_dir = "../../pyDVS/mnist_spikes/" + \
@@ -160,7 +169,8 @@ if plot_cam_spikes:
     # print(spikes)
     imgsU = imgs_in_T_from_spike_array(spikes, img_w, img_h, 
                                         0, on_time_ms, ftime_ms, 
-                                        out_array=False, thresh=thresh*100,
+                                        out_array=False, 
+                                        thresh=thresh*thresh_scale,
                                         map_func=cam_img_map)
 
     num_imgs = len(imgsU)
@@ -245,12 +255,12 @@ if simulate_retina:
         on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h, 
                                                 0, on_time_ms, ftime_ms,
                                                 out_array=True, 
-                                                thresh=thresh*100,
+                                                thresh=thresh*thresh_scale,
                                                 up_down = True)
         off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h, 
                                                  0, on_time_ms, ftime_ms,
                                                  out_array=True, 
-                                                 thresh=thresh*100,
+                                                 thresh=thresh*thresh_scale,
                                                  up_down = False)
         if plot_out_spikes:
             fig = plt.figure(3)
@@ -288,13 +298,13 @@ if simulate_retina:
         on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h, 
                                                 0, on_time_ms, ftime_ms,
                                                 out_array=True, 
-                                                thresh=thresh*20,
+                                                thresh=thresh*thresh_scale,
                                                 up_down = True,)
 
         off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h, 
                                                  0, on_time_ms, ftime_ms,
                                                  out_array=True, 
-                                                 thresh=thresh*20,
+                                                 thresh=thresh*thresh_scale,
                                                  up_down = False,)
 
         if plot_out_spikes:

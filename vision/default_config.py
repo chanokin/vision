@@ -2,57 +2,60 @@ from sim_tools.connectors.mapping_funcs import  row_col_to_input, \
                                                 row_col_to_input_breakout
 import numpy as np
 frame_rate = 100
-dir_delay = int((1000./frame_rate)*0.5)
+dir_delay = int((1000./frame_rate)*0.2)
 
 exc_cell = "IF_curr_exp"
-exc_cell_params = { 'cm': 0.35,  # nF
+exc_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
-                  'tau_m': 20.0,
-                  'tau_refrac': 2.0,
-                  'tau_syn_E': 1.,
-                  'tau_syn_I': 1.,
+                  'tau_m': 10.0,
+                  'tau_refrac': 3.0,
+                  'tau_syn_E': 2.,
+                  'tau_syn_I': 3.,
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
 
 inh_cell = "IF_curr_exp"
-inh_cell_params = { 'cm': 0.35,  # nF
+inh_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
-                  'tau_m': 20.0,
-                  'tau_refrac': 1.0,
-                  'tau_syn_E': 1.,
-                  'tau_syn_I': 1.,
+                  'tau_m': 10.0,
+                  'tau_refrac': 2.0,
+                  'tau_syn_E': 2.,
+                  'tau_syn_I': 2.,
                   'v_reset': -70.0,
                   'v_rest': -65.0,
-                  'v_thresh': -58.
+                  'v_thresh': -57.
                   }
 
 wta_inh_cell = "IF_curr_exp"
-wta_inh_cell_params = { 'cm': 0.3,  # nF
-                        'i_offset': 0.0,
-                        'tau_m': 4.0,
-                        'tau_refrac': 2.0,
-                        'tau_syn_E': 2.,
-                        'tau_syn_I': 1.,
-                        'v_reset': -70.0,
-                        'v_rest': -65.0,
-                        'v_thresh': -58.
-                        }
+wta_inh_cell_params = {'cm': 0.3,  # nF
+                       'i_offset': 0.0,
+                       'tau_m': 4.0,
+                       'tau_refrac': 2.0,
+                       'tau_syn_E': 2.,
+                       'tau_syn_I': 1.,
+                       'v_reset': -70.0,
+                       'v_rest': -65.0,
+                       'v_thresh': -58.
+                      }
 
 
-g_w2s = 4.376069
-inh_w2s = 4.376069
-dir_w2s = 2.1
+# g_w2s = 4.376069
+# inh_w2s = 4.376069
+# dir_w2s = 2.1
+g_w2s = 1.78681
+inh_w2s = 1.98681
+dir_w2s = 0.8
 ssamp_w2s = 4.376069
 
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 2.,
+                'kernel_exc_delay': 3.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
-                'corr_w2s_mult': 1.,
-                'min_weight': 0.1,
+                'corr_w2s_mult': 1.2,
+                'min_weight': 0.001,
                 'row_step': 1, 'col_step': 1,
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
