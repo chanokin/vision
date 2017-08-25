@@ -18,27 +18,43 @@ def plot_kernel(kernel, title, sideview=True, diagonal=True, save=True, fw=5,
     # cmap = plt.get_cmap('Spectral')
     kmin = np.min(kernel)
     kmax = np.max(kernel)
-    cmap_N = 255
     cmap = plt.get_cmap(cmap_name)
+    cmap_N = cmap.N
+
+    all_neg = False
     if kmin >= 0 and kmax > 0:
         cmap_div = 2
+    elif kmin <= 0 and kmax < 0:
+        cmap_div = 2
+        all_neg = True
     else:
         cmap_div = 1
-        
-    cmap_offset = cmap_N - cmap_N//cmap_div
-    half = cmap_N//2
+
+    gray = [(0.8, 0.8, 0.8, 1.0)]
+    tint = 0.9
+    cmap_offset = cmap_N - cmap_N // cmap_div
+    half = cmap_N // 2
     if cmap_div == 2:
-        cmap_list = [(0.5, 0.5, 0.5, 1.)] + \
-                    [ (0.,  0.8, 0., (float(i + 1.)/cmap_N)*0.7 + 0.3)
-                                           for i in range(cmap_N-1) ]
+        r = tint if all_neg else 0.0
+        g = 0.0  if all_neg else tint
+        a = (lambda i: (cmap_N - i)) if all_neg else (lambda i: (i + 1.))
+        cmap_list = [(r, g, 0., (float(a(i)) / cmap_N) * 0.7 + 0.3)
+                     for i in range(cmap_N - 1)]
+        if all_neg:
+            cmap_list += gray
+        else:
+            cmap_list = gray + cmap_list
+
     else:
-        cmap_list = [ (0.8, 0., 0., (float(half - i)/half)*0.7 + 0.3)
-                                           for i in range(half) ] + \
-                    [(0.5, 0.5, 0.5, 1.)] + \
-                    [ (0., 0.8, 0., (float(i + 1.)/half)*0.7 + 0.3)
-                                           for i in range(half) ]
+        cmap_list = [(0.8, 0., 0., (float(half - i) / half) * 0.7 + 0.3)
+                     for i in range(half)] + \
+                    gray + gray + \
+                    [(0., 0.8, 0., (float(i + 1.) / half) * 0.7 + 0.3)
+                     for i in range(half)]
+
+
     custom_cmap = cmap.from_list('Custom CMAP', cmap_list, cmap_N)
-    nsteps = float(200//cmap_div)
+    nsteps = float(cmap_N//cmap_div)
     step =  np.abs( kmin ) / nsteps
     neg_bounds = np.arange(kmin, 0, step)
     step =  np.abs( kmax ) / nsteps
@@ -54,16 +70,18 @@ def plot_kernel(kernel, title, sideview=True, diagonal=True, save=True, fw=5,
     fig = plt.figure(figsize=(fw*ncols + 1, fw))
     ax = plt.subplot(1,ncols,1)
     ax.set_title("Kernel")
-    img = my_imshow(ax, kernel, cmap=custom_cmap, norm=norm)
+    img = my_imshow(ax, kernel/(np.max(np.abs(kernel))),
+                    cmap=custom_cmap, norm=norm)
     plt.colorbar()
     plt.margins(0.1, 0.1)
     if sideview:
         ax = plt.subplot(1,ncols, 2)
-        ax.set_title('Middle row profile')
         if diagonal:
-            plt.plot(kernel[np.arange(kernel.shape[0]), 
+            ax.set_title('Diagonal (-45) profile')
+            plt.plot(kernel[np.arange(kernel.shape[0]),
                             np.arange(kernel.shape[0])])
         else:
+            ax.set_title('Middle row profile')
             plt.plot(kernel[kernel.shape[0]//2, :])
         plt.plot([0, kernel.shape[0]-1], [0, 0], '--', color='gray')
     
@@ -534,8 +552,8 @@ def imgs_in_T_from_spike_array(spike_array, img_width, img_height,
     
     spikes = [ sorted(spk_ts) for spk_ts in spike_array ]
         
-    imgs = [ np.zeros((img_height, img_width, 3), dtype=np.uint8) \
-             for t in range(from_t, to_t, t_step) ]
+    imgs = [ np.zeros((img_height, img_width, 3), dtype=np.uint8)
+                                for t in range(from_t, to_t, t_step) ]
     
     nrn_start_idx = [ 0 for t in range(len(spikes)) ]
     

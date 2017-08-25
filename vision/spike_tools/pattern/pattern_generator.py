@@ -459,7 +459,7 @@ def img_spikes_from_to(path, num_neurons,
             rand_dt = np.random.randint(-1, 2) #[-2, -1, 0, 1, 2] or [..., 3)
 
             vals = line.split(' ')
-            nrn_id, spk_time = int(vals[0]), int( float(vals[1]) )
+            nrn_id, spk_time = np.uint32(vals[0]), int( float(vals[1]) )
             # print("id = %s, t = %s"%(vals[0], vals[1]))
             if nrn_id > num_neurons:
                 raise Exception("Neuron Id from file is greater than number of "
@@ -473,7 +473,10 @@ def img_spikes_from_to(path, num_neurons,
                     continue
 
             rspk_time = spk_time + rand_dt
-               
+
+            if rspk_time < 0:
+                continue
+
             if rspk_time >= on_time_ms:
                 continue
 

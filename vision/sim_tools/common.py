@@ -74,11 +74,13 @@ def print_debug(txt, force=False):
 
 
 def dump_compressed(data, name):
-    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+    with bz2.BZ2File('%s.bz2'%name, 'wb') as f:
         pickle.dump(data, f)
 
 def load_compressed(name):
-    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+    fname = os.path.join(os.getcwd(), '%s.bz2'%name)
+    print(fname)
+    with bz2.BZ2File(fname, 'rb') as f:
         obj = pickle.load(f)
         return obj
 

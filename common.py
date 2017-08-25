@@ -47,7 +47,9 @@ def cam_img_map(nrn_id, img_width, img_height):
 
 
 def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
-    pop_size = img_w*img_h*2
+    row_bits = int(np.ceil(np.log2(img_h)))
+    col_bits = int(np.ceil(np.log2(img_w)))
+    pop_size = (1 << (row_bits + col_bits + 1))
     cell = sim.IF_curr_exp
     params = {  'cm': 0.35,  # nF
                 'i_offset': 0.0,
