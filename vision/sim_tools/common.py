@@ -4,6 +4,7 @@ import sys
 import os
 import pickle
 import bz2
+import re
 
 DEBUG = True
 
@@ -19,6 +20,13 @@ if sys.version_info.major == 2:
             stop = int(stop)
             step = int(step)
             return xrange(start, stop, step)
+
+def is_spinnaker(sim):
+    if re.search(r'sp[iy]nnaker', sim.__name__, re.I | re.M):
+        return True
+    else:
+        return False
+
 
 EXC, INH = 0, 1
 WEIGHT, DELAY = 0, 1
@@ -66,11 +74,13 @@ def print_debug(txt, force=False):
 
 
 def dump_compressed(data, name):
-    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+    with bz2.BZ2File('%s.bz2'%name, 'wb') as f:
         pickle.dump(data, f)
 
 def load_compressed(name):
-    with bz2.BZ2File('%s.bz2'%name, 'w') as f:
+    fname = os.path.join(os.getcwd(), '%s.bz2'%name)
+    print(fname)
+    with bz2.BZ2File(fname, 'rb') as f:
         obj = pickle.load(f)
         return obj
 

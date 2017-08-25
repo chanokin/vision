@@ -36,32 +36,41 @@ def center_surround_kernel(width=3, ctr_sigma=0.8, sigma_mult=6.7, on_center=Tru
     return cs_kernel
 
 
-def gaussian2D(width, sigma):
+def gaussian2D(width, sigma_x, sigma_y=None, theta=0, step=1):
     '''Create a matrix with values that follow a 2D Gaussian
        function. 
        :param width: width of matrix
        :param sigma: standard deviation for the Gaussian
-  
+
        :return gauss: 2D Gaussian
     '''
-    half_width = width//2
-    sigma_2 = sigma**2
-    x, y = np.meshgrid(np.arange(-half_width, half_width + 1),
-                       np.arange(-half_width, half_width + 1))
-    x_2_plus_y_2 = x**2 + y**2
-  
-    norm_weight = (1./(2. * np.pi * sigma_2))
-    gauss = (norm_weight*np.exp((-x_2_plus_y_2)/(2.*sigma_2)))
-    
+    if sigma_y is None:
+        sigma_y = sigma_x
+
+    theta = np.deg2rad(theta)
+    a = 0.5 * ((np.cos(theta) / sigma_x) ** 2 + (np.sin(theta) / sigma_y) ** 2)
+    b = 0.25 * (np.sin(2. * theta) * (-1. / (sigma_x ** 2) + 1. / (sigma_y ** 2)))
+    c = 0.5 * ((np.sin(theta) / sigma_x) ** 2 + (np.cos(theta) / sigma_y) ** 2)
+
+    half_width = width // 2
+    x, y = np.meshgrid(np.arange(-half_width, half_width + step, step),
+                       np.arange(-half_width, half_width + step, step))
+
+    gauss = np.exp(-(a * (x ** 2) + 2. * b * x * y + c * (y ** 2)))
+    gauss /= np.sum(gauss)
     return gauss
 
-def correlationGaussian2D(width0, sigma0, width1, sigma1, 
-                          use_first_width=True):
+
+def correlationGaussian2D(width0, width1, sigma_x0, sigma_x1,
+                          sigma_y0=None, sigma_y1=None,
+                          theta0=0, theta1=0,
+                          use_first_width=True,
+                          step=1):
     '''Create a matrix with values that follow the correlation of two
        2D Gaussian functions. 
        :param width: width of matrix
        :param sigma: standard deviation for the Gaussian
-  
+
        :return gauss: 2D Gaussian
     '''
     if use_first_width:
@@ -69,16 +78,18 @@ def correlationGaussian2D(width0, sigma0, width1, sigma1,
     else:
         width = max(width0, width1)
 
-    half_width = width//2
-    sigma_2 = (sigma0**2 + sigma1**2)
+    half_width = width // 2
+    sigma_2 = (sigma_x0 ** 2 + sigma_x1 ** 2)
     x, y = np.meshgrid(np.arange(-half_width, half_width + 1),
                        np.arange(-half_width, half_width + 1))
-    x_2_plus_y_2 = x**2 + y**2
-  
-    norm_weight = (1./(2. * np.pi * sigma_2))
-    gauss = (norm_weight*np.exp((-x_2_plus_y_2)/(2.*sigma_2)))
-    
+    x_2_plus_y_2 = x ** 2 + y ** 2
+
+    norm_weight = (1. / (2. * np.pi * sigma_2))
+    gauss = (norm_weight * np.exp((-x_2_plus_y_2) / (2. * sigma_2)))
+
     return gauss
+
+
 def split_center_surround_kernel(width=3, ctr_sigma=0.8, sigma_mult=6.7):
     
     cs_kernel = None

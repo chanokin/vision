@@ -1,5 +1,6 @@
 import numpy as np
 import pylab as plt
+import re
 # import vision.sim_tools.connectors.kernel_connectors as kconn
 from vision.spike_tools.vis import my_imshow, plot_spikes, \
                                    plot_output_spikes, \
@@ -10,7 +11,7 @@ from vision.spike_tools.vis import my_imshow, plot_spikes, \
 # import vision.sim_tools.kernels.center_surround as csgen
 # import vision.sim_tools.kernels.gabor as gabgen
 from vision.sim_tools.connectors import mapping_funcs as mapf
-from vision.sim_tools.common import dump_compressed, load_compressed
+from vision.sim_tools.common import dump_compressed, load_compressed, is_spinnaker
 
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 
@@ -23,7 +24,8 @@ import os
 import sys
 
 # from pyNN import nest as sim
-from pyNN import spiNNaker as sim
+# from pyNN import spiNNaker as sim
+import spynnaker7.pyNN as sim
 
 def row_major_map(nrn_id, img_width, img_height):
     r = nrn_id//img_width
@@ -45,7 +47,9 @@ def cam_img_map(nrn_id, img_width, img_height):
 
 
 def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
-    pop_size = img_w*img_h*2
+    row_bits = int(np.ceil(np.log2(img_h)))
+    col_bits = int(np.ceil(np.log2(img_w)))
+    pop_size = (1 << (row_bits + col_bits + 1))
     cell = sim.IF_curr_exp
     params = {  'cm': 0.35,  # nF
                 'i_offset': 0.0,
@@ -59,7 +63,7 @@ def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
             }
     dmy_pops = []
     dmy_prjs = []
-    if sim.__name__ == 'pyNN.spiNNaker':
+    if is_spinnaker(sim):
         cam_pop = sim.Population(pop_size, sim.SpikeSourceArray, 
                                  {'spike_times': spike_array}, 
                                  label='Source Camera')

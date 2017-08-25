@@ -2,71 +2,86 @@ from sim_tools.connectors.mapping_funcs import  row_col_to_input, \
                                                 row_col_to_input_breakout
 import numpy as np
 frame_rate = 100
-dir_delay = int((1000./frame_rate)*0.5)
+dir_delay = int((1000./frame_rate)*0.2)
 
 exc_cell = "IF_curr_exp"
-exc_cell_params = { 'cm': 0.35,  # nF
+exc_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
-                  'tau_m': 20.0,
-                  'tau_refrac': 2.0,
-                  'tau_syn_E': 1.,
-                  'tau_syn_I': 1.,
+                  'tau_m': 10.0,
+                  'tau_refrac': 3.0,
+                  'tau_syn_E': 1., #2
+                  'tau_syn_I': 2., #4
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
 
 inh_cell = "IF_curr_exp"
-inh_cell_params = { 'cm': 0.35,  # nF
+inh_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
-                  'tau_m': 20.0,
-                  'tau_refrac': 1.0,
-                  'tau_syn_E': 1.,
-                  'tau_syn_I': 1.,
+                  'tau_m': 10.0,
+                  'tau_refrac': 2.0,
+                  'tau_syn_E': 1., #2
+                  'tau_syn_I': 1., #2
                   'v_reset': -70.0,
                   'v_rest': -65.0,
-                  'v_thresh': -58.
+                  'v_thresh': -57.
                   }
 
 wta_inh_cell = "IF_curr_exp"
-wta_inh_cell_params = { 'cm': 0.3,  # nF
-                        'i_offset': 0.0,
-                        'tau_m': 4.0,
-                        'tau_refrac': 2.0,
-                        'tau_syn_E': 2.,
-                        'tau_syn_I': 1.,
-                        'v_reset': -70.0,
-                        'v_rest': -65.0,
-                        'v_thresh': -58.
-                        }
+wta_inh_cell_params = {'cm': 0.3,  # nF
+                       'i_offset': 0.0,
+                       'tau_m': 4.0,
+                       'tau_refrac': 2.0,
+                       'tau_syn_E': 2.,
+                       'tau_syn_I': 1.,
+                       'v_reset': -70.0,
+                       'v_rest': -65.0,
+                       'v_thresh': -58.
+                      }
 
 
-g_w2s = 4.376069
-inh_w2s = 4.376069
-dir_w2s = 2.1
-ssamp_w2s = 4.376069
+# g_w2s = 4.376069
+# inh_w2s = 4.376069
+# dir_w2s = 2.1
+# g_w2s = 1.78681
+# inh_w2s = 1.78681
+# dir_w2s = 1.
+# ssamp_w2s = 4.376069
+g_w2s = 4.378681
+inh_w2s = 4.378681
+dir_w2s = 1.
 
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 2.,
+                'kernel_exc_delay': 3.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
-                'corr_w2s_mult': 1.,
-                'min_weight': 0.01,
+                'corr_w2s_mult': 1.2,
+                'min_weight': 0.001,
                 'row_step': 1, 'col_step': 1,
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
 
-                'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
+                'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
                        'step': 1, 'start':1, 'w2s_mult':1.},
-                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        'step': 2, 'start': 2, 'w2s_mult': 1.},
-                'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        'step': 5, 'start': 5, 'w2s_mult': 1.},
-                'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                        'step': 10, 'start': 15, 'w2s_mult': 2.},
-                # #retina receives 1 spike per change, needs huge weights
+                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                #         'step': 2, 'start': 2, 'w2s_mult': 1.},
+                # 'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                #         'step': 5, 'start': 5, 'w2s_mult': 1.},
+                # 'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
+                #         'step': 10, 'start': 15, 'w2s_mult': 2.},
+                # 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
+                #        'step': 1, 'start': 1, 'w2s_mult': 1.},
+                # 'cs1': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                #         'step': 5, 'start': 7, 'w2s_mult': 1.},
+                # 'cs2': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
+                #         'step': 10, 'start': 15, 'w2s_mult': 1.},
+                # 'cs3': {'std_dev': 8.159841, 'sd_mult': 6.63, 'width': 63,
+                #         'step': 21, 'start': 31, 'w2s_mult': 1.},
+
+    # #retina receives 1 spike per change, needs huge weights
                 # 'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
                 #        'step': 1, 'start':0, 'w2s_mult':1.},
                 # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
@@ -86,7 +101,16 @@ defaults_retina = {
                 'record': {'voltages': False, 
                             'spikes': False,
                             },
-
+                # 'orientation':{'width': 7,
+                #                'std_dev': 6.,
+                #                'std_dev_div': 10.,
+                #                'angles': [0, 45, 90, 135],
+                #                # 'angles': [0, 90],
+                #                'w2s_mult': 1.,
+                #                'inh_mult': 1.2,
+                #                'sample_from': 'cam',
+                #                'start': 3, 'step': 3,
+                #               },
                 'direction': {'keys': [
                                         'E', 
                                         'W',
@@ -109,7 +133,7 @@ defaults_retina = {
                             'weight_func': lambda d,a,w: w/(1.+a),
                             'step': 1,
                             'start': 0,
-                            'sample_from': 'cs',
+                            'sample_from': 'cam',
                             },
 
                 # 'input_mapping_func': row_col_to_input_breakout,

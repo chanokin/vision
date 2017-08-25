@@ -1,5 +1,6 @@
 from ..common import *
 
+from .retina_visualiser import RetinaVisualiser
 
 def plot_connector_3d(ax, imgw, imgh, conns, col_start=0, row_start=0,
                       col_step=1, row_step=1):

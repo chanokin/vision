@@ -3,8 +3,9 @@ import pylab as plt
 import time
 import sys
 import pickle
-
-from pyNN import spiNNaker as sim
+from vision.default_config import exc_cell_params as exc_params,\
+                                  inh_cell_params as inh_params
+import spynnaker7.pyNN as sim
 # from pyNN import nest as sim
 # import spynnaker_extra_pynn_models as q
 # sim = None
@@ -30,13 +31,13 @@ num_neurons = 1
 num_exc = 1
 
 # w2s   = 4.376069 # for 10 ms tau_m
-w2s   = 3.94125 # for 20 ms tau_m
+w2s   = 1.78681 # for 20 ms tau_m
 w_max = w2s*1.
 
 
 hours   = 0
 minutes = 0
-seconds = 5.
+seconds = 1.
 real_time = int( np.ceil( tstep_ms*(hours*60*60 + minutes*60 + seconds) ) )
 sim_time = int( real_time*1.5 )
 
@@ -51,28 +52,6 @@ spike_times = [10]
 #########################################################################
 
 cell = sim.IF_curr_exp
-
-exc_params = {  'cm': 0.35,  # nF
-                'i_offset': 0.0,
-                'tau_m': 20.0,
-                'tau_refrac': 2.0,
-                'tau_syn_E': 1.,
-                'tau_syn_I': 1.,
-                'v_reset': -70.0,
-                'v_rest': -65.0,
-                'v_thresh': -55.4
-            }
-
-inh_params = {  'cm': 0.35,  # nF
-                'i_offset': 0.0,
-                'tau_m': 20.0,
-                'tau_refrac': 1.0,
-                'tau_syn_E': 1.,
-                'tau_syn_I': 1.,
-                'v_reset': -70.0,
-                'v_rest': -65.0,
-                'v_thresh': -58.
-            }
 
 if sim.__name__ == 'pyNN.spiNNaker':
     sim.set_number_of_neurons_per_core(cell, neurons_per_core)
@@ -94,6 +73,7 @@ else:
 
 source.record()
 target.record()
+target.record_v()
 
 ########################################################################
 # P R O J E C T I O N S
@@ -101,7 +81,8 @@ target.record()
 
 
 src_to_tgt = sim.Projection(source, target,
-                            sim.OneToOneConnector(weights=w2s),
+                            sim.OneToOneConnector(weights=w2s, 
+                                                  generate_on_machine=True),
                             target='excitatory')
 
 
@@ -114,13 +95,20 @@ sim.run(sim_time)
 spikes = {'target': target.getSpikes(compatible_output=True),
           'source': source.getSpikes(compatible_output=True),
          }
-
+voltage = target.get_v()
 sim.end()
 
 print("Total number of spikes %d"%(len(spikes['target'])))
 ########################################################################
 # P L O T    R E S U L T S
 ########################################################################
+
+# print(voltage)
+fig = plt.figure()
+ax = plt.subplot(1, 1, 1)
+plt.plot([t for _, t, _ in voltage], [v for _, _, v in voltage])
+plt.draw()
+plt.savefig("characterize_neuron_voltage.png", dpi=300)
 
 # Spikes
 fig = plt.figure()
