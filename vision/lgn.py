@@ -45,9 +45,9 @@ class LGN():
         print("\t\tdone!")
 
     def _right_key(self, key):
-        if 'gabor' in key:
-            return 'gabor'
-        elif 'dir' in key:
+        if 'orient' in key or 'orientation' in key:
+            return 'orientation'
+        elif 'dir' in key or 'direction' in key:
             return 'dir'
         else:
             return key
@@ -75,17 +75,19 @@ class LGN():
         cfg  = self.cfg
         cs = {}
         ccss = 'cs'
-        cs[ccss] = krn_gen.split_center_surround_kernel(rcfg[ccss]['width'],
-                                                        rcfg[ccss]['std_dev'], 
-                                                        rcfg[ccss]['sd_mult'])
-        for i in range(len(cs[ccss])): 
-            # print( cs[ccss][i] )
+        cs = {EXC: krn_gen.gaussian2D(cfg['cs']['width'], cfg['cs']['std_dev']),
+              INH: krn_gen.correlationGaussian2D(
+                                      cfg['cs']['width'], cfg['cs']['width'],
+                                      cfg['cs']['std_dev'], cfg['cs']['std_dev'])}
 
-            inv_sum_pos = 1./(np.sum(cs[ccss][i]))
-            cs[ccss][i] *= inv_sum_pos * cfg['w2s'] * rcfg[ccss]['w2s_mult']
-            print( cs[ccss][i] )
-        
-        # sys.exit(0)
+        if key_is_true('plot_kernels', cfg):
+            print(cs)
+
+        for k in cs:
+
+            cs[k] /= np.sum(cs[k])
+            cs[k] *= (cfg['w2s'] if k == EXC else cfg['inh_w2s'])
+            cs[k] *= (cs[k] > 0)
         self.split_cs = cs
 
 
@@ -96,21 +98,21 @@ class LGN():
         scs = self.split_cs
         for ccss in self.retina.get_output_keys():
 
-            pre_shape = (self.pop_height(ccss), self.pop_width(ccss))
-            pre_start = (self.sample_start(ccss), self.sample_start(ccss))
-            pre_steps = (self.sample_step(ccss), self.sample_step(ccss))
-
+            post_shape = (self.pop_height(ccss), self.pop_width(ccss))
             conns[ccss] = {}
-            
-            if self.sim.__name__ == 'pyNN.spiNNaker':
 
-                exc = sim.KernelConnector(pre_shape, pre_shape,
-                                          weights=scs['cs'][EXC], 
+            
+            if is_spinnaker(self.sim):
+                krn = scs[EXC]
+                exc = sim.KernelConnector(post_shape, post_shape, #same size
+                                          krn.shape,
+                                          weights=krn,
                                           delays=cfg['kernel_exc_delay'], 
                                           generate_on_machine=True)
-
-                inh = sim.KernelConnector(pre_shape, pre_shape,
-                                          weights=scs['cs'][INH], 
+                krn = scs[INH]
+                inh = sim.KernelConnector(post_shape, post_shape,
+                                          krn.shape,
+                                          weights=krn,
                                           delays=cfg['kernel_inh_delay'], 
                                           generate_on_machine=True)
             else:
@@ -187,25 +189,33 @@ class LGN():
                 # print('lgn - projections - key: %s'%k)
                 
                 projs[c][k] = {}
-                o2o = sim.OneToOneConnector(weights=cfg['w2s'],
-                                            delays=cfg['kernel_inh_delay'])
-                # print("src size: %d"%self.retina.pops['off'][k]['ganglion'].size) 
+                if is_spinnaker(self.sim):
+                    o2o = sim.OneToOneConnector(weights=cfg['w2s'],
+                                                delays=cfg['kernel_inh_delay'],
+                                                generate_on_machine=True)
+                else:
+                    o2o = sim.OneToOneConnector(weights=cfg['w2s'],
+                                                delays=cfg['kernel_inh_delay'])
+
+                # print("src size: %d"%self.retina.pops['off'][k]['ganglion'].size)
                 # print("dst size: %d"%self.pops[k]['inter'].size)
                 projs[c][k]['inter'] = sim.Projection(self.retina.pops[c][k]['ganglion'],
-                                                      self.pops[c][k]['inter'], o2o,
-                                                      target='excitatory')
+                                          self.pops[c][k]['inter'], o2o, target='excitatory',
+                                          label='retina to inter - %s - %s' %(c, k))
 
                 split = self.conns[k]
-                projs[c][k]['exc'] = sim.Projection(self.retina.pops[c][k]['ganglion'], 
-                                                    self.pops[c][k]['ganglion'], 
-                                                    split[EXC],
-                                                    target='excitatory')
+                projs[c][k]['exc'] = sim.Projection(self.retina.pops[c][k]['ganglion'],
+                                        self.pops[c][k]['ganglion'], split[EXC],
+                                        target='excitatory',
+                                        label='retina to relay - %s - %s' %
+                                              (c, k))
 
                 cntr_c = 'off' if c == 'on' else 'on'
                 projs[c][k]['inh'] = sim.Projection(self.pops[cntr_c][k]['inter'], 
-                                                    self.pops[c][k]['ganglion'], 
-                                                    split[INH],
-                                                    target='inhibitory')
+                                        self.pops[c][k]['ganglion'], split[INH],
+                                        target='inhibitory',
+                                        label='lgn inter %s to relay %s - %s' %
+                                              (cntr_c, c, k))
 
             self.projs = projs
 

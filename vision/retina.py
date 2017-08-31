@@ -23,10 +23,10 @@ import sys
 class Retina():
     _DEBUG = True
     def _dir_key(self, ang):
-        return "direction_%s"%ang
+        return "direction_%03d"%int(ang)
 
     def _orient_key(self, ang):
-        return "orientation_%s"%ang
+        return "orientation_%03d"%int(ang)
 
     def __init__(self, simulator, camera_pop, width, height, dvs_mode, 
                 cfg=defaults):
@@ -208,7 +208,7 @@ class Retina():
 
 
     def get_output_keys(self):
-        return [k for k in self.pops['on'] if k is not 'cam_inter']
+        return [k for k in self.pops['on'] if 'cam' not in k ]
 
 
     def build_kernels(self):
@@ -748,7 +748,8 @@ class Retina():
             pre  = self.cam[k]
             post = self.pops[k]['cam_inter']
             conn = self.extra_conns['o2o']
-            exc = sim.Projection(pre, post, conn, target='excitatory')            
+            exc = sim.Projection(pre, post, conn, target='excitatory',
+                                 label='cam to cam inter %s'%k)
             self.projs[k]['cam_inter']['cam2intr'] = [exc]
 
         # photo to bipolar, 

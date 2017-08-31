@@ -30,6 +30,7 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
                'lateral_competition': competition_on,
                'split_cam_off_arg': False,
                'plot_kernels': True,
+               'orientation': False,
               }
 
     if not direction_on:
@@ -146,62 +147,11 @@ frames = 200
 thresh = int(255*0.05) # just for plotting
 # thresh = int(255*0.1)
 
-# mnist_dir = "../../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_SACCADE_pol_MERGED" + \
-#             "_enc_RATE_thresh_12_hist_99_00" + \
-#             "_inh_False___" + \
-#             "200_frames_at_100fps_32x32_res_spikes/" + \
-#             "t10k/"
-#             # "t10k/" "train/"
-
-mnist_dir = "../pyDVS/mnist_spikes/" + \
-            "mnist_behave_SACCADE_pol_MERGED" + \
-            "_enc_RATE_thresh_12_hist_99_00" + \
-            "_inh_False___" + \
-            "100_frames_at_100fps_%dx%d_res_spikes/" + \
-            "t10k/"
-            # "t10k/" "train/"
-
-# mnist_dir = "../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_TRAVERSE_pol_MERGED" + \
-#             "_enc_RATE_thresh_12_hist_99_00" + \
-#             "_inh_False___" + \
-#             "500_frames_at_100fps_%dx%d_res_spikes/" + \
-#             "t10k/"
-
-# mnist_dir = "../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_TRAVERSE_pol_MERGED" + \
-#             "_enc_TIME_thresh_12_hist_99_00" + \
-#             "_inh_False___" + \
-#             "500_frames_at_100fps_%dx%d_res_spikes/" + \
-#             "t10k/"
-
-# mnist_dir = "../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_TRAVERSE_pol_MERGED" + \
-#             "_enc_TIME_thresh_12_hist_100_00" + \
-#             "_inh_False___" + \
-#             "1000_frames_at_100fps_%dx%d_res_spikes/" + \
-#             "t10k/"
-            # "t10k/" "train/"
-
-# mnist_dir = "../../pyDVS/mnist_spikes/" + \
-#             "img_behave_SACCADE_pol_MERGED" + \
-#             "_enc_TIME_thresh_12_hist_100_00" + \
-#             "_inh_False___" + \
-#             "10_frames_at_100fps_%dx%d_res_spikes/" + \
-#             "t10k/"
-
-# mnist_dir = "../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_SACCADE_pol_MERGED" + \
-#             "_enc_TIME_thresh_12_hist_100_00" + \
-#             "_inh_False___" + \
-#             "200_frames_at_90fps_%dx%d_res_spikes/" + \
-#             "t10k/"
 mnist_dir = "../pyDVS/mnist_spikes/" + \
             "mnist_behave_SACCADE_" + \
             "pol_MERGED_enc_TIME_" + \
             "thresh_12_hist_95_00_"+ \
-            "inh_False___90_frames_" + \
+            "inh_False___45_frames_" + \
             "at_90fps_%dx%d_res_spikes/" + \
             "t10k/"
 mnist_dir = mnist_dir%(img_w, img_h)

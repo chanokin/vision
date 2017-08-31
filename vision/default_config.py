@@ -54,7 +54,7 @@ dir_w2s = 1.
 
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 3.,
+                'kernel_exc_delay': 2.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.2,
@@ -66,12 +66,12 @@ defaults_retina = {
 
                 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
                        'step': 1, 'start':1, 'w2s_mult':1.},
-                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                #         'step': 2, 'start': 2, 'w2s_mult': 1.},
-                # 'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                #         'step': 5, 'start': 5, 'w2s_mult': 1.},
-                # 'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                #         'step': 10, 'start': 15, 'w2s_mult': 2.},
+                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                        'step': 2, 'start': 2, 'w2s_mult': 1.},
+                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                        'step': 5, 'start': 5, 'w2s_mult': 1.},
+                'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
+                        'step': 10, 'start': 15, 'w2s_mult': 1.5},
                 # 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
                 #        'step': 1, 'start': 1, 'w2s_mult': 1.},
                 # 'cs1': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
@@ -101,16 +101,16 @@ defaults_retina = {
                 'record': {'voltages': False, 
                             'spikes': False,
                             },
-                # 'orientation':{'width': 7,
-                #                'std_dev': 6.,
-                #                'std_dev_div': 10.,
-                #                'angles': [0, 45, 90, 135],
-                #                # 'angles': [0, 90],
-                #                'w2s_mult': 1.,
-                #                'inh_mult': 1.2,
-                #                'sample_from': 'cam',
-                #                'start': 3, 'step': 3,
-                #               },
+                'orientation':{'width': 7,
+                               'std_dev': 6.,
+                               'std_dev_div': 10.,
+                               'angles': [0, 45, 90, 135],
+                               # 'angles': [0, 90],
+                               'w2s_mult': 1.,
+                               'inh_mult': 1.,
+                               'sample_from': 'cam',
+                               'start': 3, 'step': 3,
+                              },
                 'direction': {'keys': [
                                         'E', 
                                         'W',
@@ -149,14 +149,12 @@ defaults_retina = {
 ####################         L G N          ###########################
 #######################################################################
 
-defaults_lgn = { 'kernel_width': 3,
-                 'kernel_exc_delay': 2.,
+defaults_lgn = {
+                 'kernel_exc_delay': 3.,
                  'kernel_inh_delay': 1.,
-                 'row_step': 1, 'col_step': 1,
-                 'start_row': 0, 'start_col': 0,
-                 'gabor': {'num_divs': 7., 'freq': 5., 'std_dev': 1.1},
-                 'ctr_srr': {'std_dev': 0.8, 'sd_mult': 6.7} ,
-                 'w2s': g_w2s*1.1,
+                 'cs': {'std_dev': 0.43, 'width': 3, 'wmult': 1.1} ,
+                 'w2s': g_w2s*1.0,
+                 'inh_w2s': g_w2s*1.5,
                  'inh_cell': {'cell': inh_cell,
                               'params': inh_cell_params
                              }, 
@@ -166,7 +164,8 @@ defaults_lgn = { 'kernel_width': 3,
                  'record': {'voltages': False, 
                               'spikes': True,
                            },
-                 'lat_inh': False,
+                 'plot_kernels': True,
+
                }
 
 

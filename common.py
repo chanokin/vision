@@ -5,7 +5,9 @@ import re
 from vision.spike_tools.vis import my_imshow, plot_spikes, \
                                    plot_output_spikes, \
                                    imgs_in_T_from_spike_array, \
-                                   images_to_video
+                                   images_to_video, \
+                                   plot_in_out_spikes, \
+                                   plot_image_set
 
 # from vision.sim_tools.vis import plot_connector_3d
 # import vision.sim_tools.kernels.center_surround as csgen
@@ -79,7 +81,8 @@ def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
             conn = [(0, i, w2s, 1)]
             dmy_prjs.append(sim.Projection(dmy_pops[i], cam_pop,
                                         sim.FromListConnector(conn),
-                                        target='excitatory'))
+                                        target='excitatory',
+                                        label='dmy to cam %d'%i))
 
     return cam_pop, dmy_pops, dmy_prjs
 

@@ -708,4 +708,57 @@ def images_to_video(images, fps=100, title='output video', scale=10, outdir='./'
 # === ------------------------------------------------------------ === #
 
 
+def plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, pop, channel, close=True):
+    fig = plt.figure(figsize=(10, 7))
+    plt.plot([t for (_, t) in out_spikes],
+             [i for (i, _) in out_spikes], '|',
+             color='blue', markersize=5,
+             label='Output - filter %s - channel %s - (%d spikes)' %
+                   (pop, channel, len(out_spikes))
+             )
 
+    plt.plot([t for (_, t) in in_spikes],
+             [i for (i, _) in in_spikes], '.',
+             color=in_color, markersize=2,
+             label='Input - filter %s - channel %s - (%d spikes)' %
+                   (pop, channel, len(in_spikes))
+             )
+    plt.ylabel('Neuron Id')
+    plt.xlabel('Time (ms)')
+    plt.margins(0.1, 0.1)
+    lgd = plt.legend(bbox_to_anchor=(1., 1.15), loc='upper right',
+                     ncol=1)
+    plt.draw()
+    plt.savefig(fname, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    if close:
+        plt.close(fig)
+        return None
+    else:
+        return fig
+
+def plot_image_set(on_images, fname, ftime_ms, off_images=None,
+                   num_cols=10, figw=2., close=True):
+
+
+    num_imgs = len(on_images)
+    num_rows = num_imgs // num_cols + (1 if num_imgs % num_cols else 0)
+    figw = 2.5
+    fig = plt.figure(figsize=(figw * num_cols, figw * num_rows))
+    # plt.suptitle("each square is %d ms"%(ftime_ms))
+    for i in range(num_imgs):
+
+        ax = plt.subplot(num_rows, num_cols, i + 1)
+        if i == 0:
+            ax.set_title("%d ms frame" % ftime_ms)
+
+        if off_images:
+            on_images[i][:, :, 0] = off_images[i][:, :, 0]
+
+        my_imshow(ax, on_images[i], cmap=None)
+
+    plt.savefig(fname)
+    if close:
+        plt.close(fig)
+        return None
+    else:
+        return fig

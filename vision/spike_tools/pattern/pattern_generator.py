@@ -9,6 +9,8 @@ from numpy import float64
 from numpy import random
 import pickle
 import glob
+import bz2
+import io
 from vision.sim_tools.common import *
 
 LESS_THAN     = "less than"
@@ -424,7 +426,7 @@ def label_spikes_from_to(labels, num_classes,
 def img_spikes_from_to(path, num_neurons, 
                        start_file_idx, end_file_idx, 
                        on_time_ms, off_time_ms, 
-                       start_time, delete_before=0, ext='txt',
+                       start_time, delete_before=0, ext='txt.bz2',
                        noise=True, noise_prob=0.):
     start = start_file_idx
     end   = end_file_idx
@@ -439,16 +441,17 @@ def img_spikes_from_to(path, num_neurons,
     if len(spk_files) == 0:
         raise Exception("Unable to locate files in dir:\n\t\t%s"%path)
 
-    import sys
-    import io
+
     t = float(start_time)
+
     for fname in spk_files[start:end]:
         # print(fname)
         # spks[:] = [ [] for i in range(num_neurons) ]
         n_lines = file_len(fname)
         
         # f = open(fname, 'r')
-        f = io.open(fname, 'r', buffering=1)
+
+        f = bz2.BZ2File(fname, 'rb')
         line_n = 2
         for line in f:
             sys.stdout.write("\r%03.2f%%"%(100.*float(line_n)/n_lines))
