@@ -45,12 +45,7 @@ class LGN():
         print("\t\tdone!")
 
     def _right_key(self, key):
-        if 'orient' in key or 'orientation' in key:
-            return 'orientation'
-        elif 'dir' in key or 'direction' in key:
-            return 'dir'
-        else:
-            return key
+        return self.retina._right_key(key)
         
     def pop_size(self, key):
         return self.shapes[self._right_key(key)]['size']
@@ -71,10 +66,7 @@ class LGN():
         return self.pops[self.channels[0]].keys()
         
     def build_kernels(self):
-        rcfg = self.rcfg
         cfg  = self.cfg
-        cs = {}
-        ccss = 'cs'
         cs = {EXC: krn_gen.gaussian2D(cfg['cs']['width'], cfg['cs']['std_dev']),
               INH: krn_gen.correlationGaussian2D(
                                       cfg['cs']['width'], cfg['cs']['width'],
@@ -84,10 +76,10 @@ class LGN():
             print(cs)
 
         for k in cs:
-
             cs[k] /= np.sum(cs[k])
             cs[k] *= (cfg['w2s'] if k == EXC else cfg['inh_w2s'])
             cs[k] *= (cs[k] > 0)
+
         self.split_cs = cs
 
 

@@ -4,7 +4,7 @@ from sim_tools.connectors import kernel_connectors as conn_krn, \
 from default_config import defaults_v1 as defaults
 from lgn import LGN
 import abc
-
+import os
 
 class BaseColumn(object):
     __metaclass__ = abc.ABCMeta
@@ -14,6 +14,11 @@ class BaseColumn(object):
         for k in defaults.keys():
             if k not in cfg.keys():
                 cfg[k] = defaults[k]
+
+        self._weight_dir = cfg['weight_dir']
+
+        if not os.path.isdir(self._weight_dir):
+            os.makedirs(os.path.join(os.getcwd(), self._weight_dir))
 
         self.cfg = cfg
         self._v1_width  = width
@@ -54,22 +59,17 @@ class BaseColumn(object):
     def get_map_params(self, k):
         step, start, width, height, krn_width = 0, 0, 0, 0, 0
         if self.lgn is not None:
-            width  = self.lgn.pop_width(k)
+            width = self.lgn.pop_width(k)
             height = self.lgn.pop_height(k)
-            step   = self.lgn.sample_step(k)
-            start  = self.lgn.sample_start(k)
+            step = self.lgn.sample_step(k)
+            start = self.lgn.sample_start(k)
 
-            if k == 'cs4':
-                kk = 'cs_quart'
-            elif k == 'cs2':
-                kk = 'cs_half'
+            if 'dir' in k:
+                krn_width = self.retina.cfg['direction']['width']
+            elif 'orient' in k:
+                krn_width = self.retina.cfg['orientation']['width']
             else:
-                kk = k
-            
-            if 'dir' not in kk:
-                krn_width = self.retina.cfg[kk]['width']        
-            else:
-                krn_width = 0
+                krn_width = self.retina.cfg[k]
 
         return step, start, width, height, krn_width
 

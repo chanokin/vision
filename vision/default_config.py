@@ -1,8 +1,6 @@
 from sim_tools.connectors.mapping_funcs import  row_col_to_input, \
                                                 row_col_to_input_breakout
 import numpy as np
-frame_rate = 100
-dir_delay = int((1000./frame_rate)*0.2)
 
 exc_cell = "IF_curr_exp"
 exc_cell_params = { 'cm': 0.25,  # nF
@@ -51,7 +49,11 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 g_w2s = 4.378681
 inh_w2s = 4.378681
 dir_w2s = 1.
-
+frame_rate = 100
+pix_dist = 0.25
+dir_delay = int((1000./frame_rate)*pix_dist)
+dir_max_dist = 5
+dir_width = dir_max_dist*2 + 1
 defaults_retina = {
                 # 'kernel_width': 3,
                 'kernel_exc_delay': 2.,
@@ -66,30 +68,22 @@ defaults_retina = {
 
                 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
                        'step': 1, 'start':1, 'w2s_mult':1.},
-                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        'step': 2, 'start': 2, 'w2s_mult': 1.},
-                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        'step': 5, 'start': 5, 'w2s_mult': 1.},
-                'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                        'step': 10, 'start': 15, 'w2s_mult': 1.5},
-                # 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
-                #        'step': 1, 'start': 1, 'w2s_mult': 1.},
-                # 'cs1': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                #         'step': 2, 'start': 3, 'w2s_mult': 1.},
+                # 'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
                 #         'step': 5, 'start': 7, 'w2s_mult': 1.},
-                # 'cs2': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
+                # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
-                # 'cs3': {'std_dev': 8.159841, 'sd_mult': 6.63, 'width': 63,
-                #         'step': 21, 'start': 31, 'w2s_mult': 1.},
 
     # #retina receives 1 spike per change, needs huge weights
                 # 'cs': {'std_dev': 0.8, 'sd_mult': 6.7, 'width': 3, 
                 #        'step': 1, 'start':0, 'w2s_mult':1.},
-                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                #         'step': 1, 'start':0, 'w2s_mult': 2.5},
-                # 'cs4': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                #         'step': 2, 'start': 0, 'w2s_mult': 4.},
-                # 'cs8': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                #         'step': 2, 'start': 0, 'w2s_mult': 12.},
+                # 'cs1': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                #         'step': 3, 'start':0, 'w2s_mult': 2.5},
+                # 'cs2': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                #         'step': 5, 'start': 0, 'w2s_mult': 4.},
+                # 'cs3': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
+                #         'step': 7, 'start': 0, 'w2s_mult': 12.},
                 'w2s': g_w2s, 
                 'inhw': inh_w2s,
                 'inh_cell': {'cell': inh_cell,
@@ -101,40 +95,41 @@ defaults_retina = {
                 'record': {'voltages': False, 
                             'spikes': False,
                             },
-                'orientation':{'width': 7,
-                               'std_dev': 6.,
-                               'std_dev_div': 10.,
-                               'angles': [0, 45, 90, 135],
-                               # 'angles': [0, 90],
-                               'w2s_mult': 1.,
-                               'inh_mult': 1.,
-                               'sample_from': 'cam',
-                               'start': 3, 'step': 3,
-                              },
-                'direction': {'keys': [
-                                        'E', 
-                                        'W',
-                                        # 'N', 
-                                        # 'S',
-                                        #'NW', 'SW', 'NE', 'SE',
-                                        #'east', 'south', 'west', 'north',
-                                        #'south east', 'south west', 
-                                        #'north east', 'north west'
-                                      ],
-                            'div': 4,#6,
-                            'weight': dir_w2s,
-                            'delays': [1, 4, 6, 8],#, 3, 4 ],
-                            'subsamp': 1,#2,
-                            # 'w2s': ssamp_w2s,
-                            'angle': 60,
-                            'dist': 5,
-                            'delay_func': lambda dist: dir_delay*dist, 
-                                            #20ms = 1000/framerate
-                            'weight_func': lambda d,a,w: w/(1.+a),
-                            'step': 1,
-                            'start': 0,
-                            'sample_from': 'cam',
-                            },
+                # 'orientation':{'width': 7,
+                #                'std_dev': 6.,
+                #                'std_dev_div': 10.,
+                #                'angles': [0, 45, 90, 135],
+                #                # 'angles': [0, 90],
+                #                'w2s_mult': 1.,
+                #                'inh_mult': 1.,
+                #                'sample_from': 'cam',
+                #                'start': 3, 'step': 3,
+                #               },
+                # 'direction': {'keys': [
+                #                         'E',
+                #                         # 'W',
+                #                         # 'N',
+                #                         # 'S',
+                #                         #'NW', 'SW', 'NE', 'SE',
+                #                         #'east', 'south', 'west', 'north',
+                #                         #'south east', 'south west',
+                #                         #'north east', 'north west'
+                #                       ],
+                #             'div': 4,#6,
+                #             'weight': dir_w2s,
+                #             'delays': [1, 4, 6, 8],#, 3, 4 ],
+                #             'subsamp': 1,#2,
+                #             # 'w2s': ssamp_w2s,
+                #             'angle': 60,
+                #             'dist': dir_max_dist,
+                #             'width': dir_width,
+                #             'delay_func': lambda dist: dir_delay*dist,
+                #                             #20ms = 1000/framerate
+                #             'weight_func': lambda d,a,w: w/(1.+a),
+                #             'step': 1,
+                #             'start': 0,
+                #             'sample_from': 'cam',
+                #             },
 
                 # 'input_mapping_func': row_col_to_input_breakout,
                 'input_mapping_func': row_col_to_input,
@@ -177,6 +172,7 @@ defaults_lgn = {
 # unit_type = 'autoencoder'
 # unit_type = 'liquid_state'
 unit_type = 'four_to_one'
+unit_type = 'simple'
 
 
 #from A Statistical Analysis of Information-Processing Properties of 
@@ -186,6 +182,7 @@ pop_ratio = {'l2': {'inh': 0.2, 'exc': 0.8},
              'l5': {'inh': 0.2, 'exc': 0.8},
             }
 
+pop_ratio = {'l0': {'inh': 0.2, 'exc': 0.8}}
 
 column_conn_wgt = {'l2': {'exc2inh': 1.90, 'inh2exc': -0.65,
                           'exc2exc': 1.70, 'inh2inh': -1.35,
@@ -202,7 +199,10 @@ column_conn_wgt = {'l2': {'exc2inh': 1.90, 'inh2exc': -0.65,
                           'exc2l2e': 0.30,
                          },
                   }
-w_conv = (g_w2s*1.1)/5.2 #5.2 is abs max weight in dict
+
+column_conn_wgt = {'l0': {'exc2inh': g_w2s/250., 'inh2exc': g_w2s}}
+
+w_conv = 1.#(g_w2s)/5.2 #5.2 is abs max weight in dict
 for l in column_conn_wgt:
     for c in column_conn_wgt[l]:
         column_conn_wgt[l][c] *= w_conv
@@ -223,16 +223,26 @@ column_conn_prob = {'l2': {'exc2inh': 0.21, 'inh2exc': 0.16,
                           },
                    }
 
+column_conn_prob = {'l0': {'exc2inh': 0.10, 'inh2exc': 10,
+                           'exc2inh': 0.10, 'inh2inh': 10}}
+
 input_conn_prob = {'main':  {'l2e': 0.20,
                              'l4e': 0.80, 'l4i': 0.50,
                              'l5e': 0.10,
                             },
-                   'extra': {'l2e': 0.20,
-                            }
+                   'extra': {'l2e': 0.20,}
                   }
+
+input_conn_prob = {'main':  {'l0e': 1.00},
+                   'extra': {'l2e': 0.20}
+                  }
+
 neurons_in_column = {'l2': 40,
                      'l4': 100,
                      'l5': 40}
+
+neurons_in_column = {'l0': 50}
+
 defaults_v1 = { 'unit_type': unit_type,
                 'w2s': g_w2s,
                 'pop_ratio': pop_ratio,
@@ -285,6 +295,7 @@ defaults_v1 = { 'unit_type': unit_type,
                 'build_complex': False,
                 'build_readout': False,
                 'complex_recp_width': 9,
+                'weight_dir': 'v1_column_weights',
                }
 
 

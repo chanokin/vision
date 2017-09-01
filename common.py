@@ -19,6 +19,7 @@ from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 from vision.retina import Retina, dvs_modes, MERGED
 from vision.lgn import LGN
+from vision.v1 import V1
 
 from vision.spike_tools.pattern import pattern_generator as pat_gen
 

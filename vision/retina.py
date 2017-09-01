@@ -23,7 +23,7 @@ import sys
 class Retina():
     _DEBUG = True
     def _dir_key(self, ang):
-        return "direction_%03d"%int(ang)
+        return "direction_%02s"%(ang)
 
     def _orient_key(self, ang):
         return "orientation_%03d"%int(ang)

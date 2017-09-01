@@ -1,6 +1,7 @@
 from common import *
 
 import cv2
+import time
 
 def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069, 
             competition_on=True, direction_on=True):
@@ -13,7 +14,7 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
         # sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 50)
         # sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 1000)
         # sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 500)
-        sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 1000)
+        sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 500)
 
     cam, dmy_ssa_cam, dmy_prj_cam = setup_cam_pop(sim, spikes, 
                                                   img_w, img_h, w2s=w2s)
@@ -30,7 +31,6 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
                'lateral_competition': competition_on,
                'split_cam_off_arg': False,
                'plot_kernels': True,
-
               }
 
     if not direction_on:
@@ -38,34 +38,40 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
 
     mode = dvs_modes[MERGED]
     retina = Retina(sim, cam, img_w, img_h, mode, cfg=ret_cfg)
+    lgn = LGN(sim, retina)
+    v1 = V1(sim, lgn, learning_on=False)
 
-    print("\n Experiment will begin now...\n")
+    start_time = time.time()
+    print("\n Experiment will begin now...@ %s\n" %
+          time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime()))
 
     sim.run(run_time)
-
-    print("\n Experiment finished running!\n")
+    end_time = time.time()
+    time_to_run = end_time - start_time
+    print("\n Experiment finished running @ %s! Took %s minutes to run\n" %
+          (time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime()), time_to_run/60.))
 
     map_w = {}
     out_spikes = {}
     bip_w = {}
-    for k in retina.pops.keys():
-        out_spikes[k] = {}
-        out_spikes[k]['cam'] = get_spikes(retina.cam[k], 'cam__%s'%k)
-        map_w[k] = retina._cam_map_projs[k].getWeights(format='array')
-        bip_w[k] = {}
-        for p in retina.pops[k].keys():
-            out_spikes[k][p] = {}
-            if 'bip2gang' in retina.projs[k][p]:
-                bip_w[k][p] = [np.array(retina.projs[k][p]['bip2gang'][0].
+    for ch in retina.pops.keys():
+        out_spikes[ch] = {}
+        out_spikes[ch]['cam'] = get_spikes(retina.cam[ch], 'cam__%s'%ch)
+        map_w[ch] = retina._cam_map_projs[ch].getWeights(format='array')
+        bip_w[ch] = {}
+        for p in retina.pops[ch].keys():
+            out_spikes[ch][p] = {}
+            if 'bip2gang' in retina.projs[ch][p]:
+                bip_w[ch][p] = [np.array(retina.projs[ch][p]['bip2gang'][0].
                                                 getWeights(format='array')),
-                               np.array(retina.projs[k][p]['bip2gang'][1].
+                               np.array(retina.projs[ch][p]['bip2gang'][1].
                                                 getWeights(format='array'))]
 
-            if isinstance(retina.pops[k][p], dict):
-                for t in retina.pops[k][p].keys():
-                    key = "%s__%s__%s"%(k, p, t)
+            if isinstance(retina.pops[ch][p], dict):
+                for t in retina.pops[ch][p].keys():
+                    key = "%s__%s__%s"%(ch, p, t)
                     print("\tGettings spikes for %s"%key)
-                    out_spikes[k][p][t] = get_spikes(retina.pops[k][p][t],
+                    out_spikes[ch][p][t] = get_spikes(retina.pops[ch][p][t],
                                                      key)
 
     for k in map_w.keys():
@@ -97,20 +103,20 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
                     r += 1
                 f.close()
 
+    lgn_spikes = {}
+    for ch in lgn.pops.keys():
+        lgn_spikes[ch] = {}
+        for p in lgn.pops[ch].keys():
+            lgn_spikes[ch][p] = {}
+            for lyr in  lgn.pops[ch][p]:
+                lgn_spikes[ch][p][lyr] = lgn.pops[ch][p][lyr].\
+                                           getSpikes(compatible_output=True)
 
 
-    # exw = retina.projs['on']['cs']['bip2gang'][0].getWeights(format='array')
-    # for w in exw[:, 0]:
-    #     if not np.isnan(w):
-    #         print(w)
-    # ihw = retina.projs['on']['cs']['bip2gang'][1].getWeights(format='array')
-    # for w in ihw[:, 0]:
-    #     if not np.isnan(w):
-    #         print(w)
 
     sim.end()
 
-    return out_spikes, retina.shapes
+    return out_spikes, retina.shapes, lgn_spikes
 
 def delete_prev_run():
     import os
@@ -167,7 +173,7 @@ print(mnist_dir)
 plot_cam_spikes = True if 1 else False
 simulate_retina = True if 1 else False
 competition_on  = True if 0 else False
-direction_on    = True if 1 else False
+direction_on    = True if 0 else False
 plot_out_spikes = True if 0 else False
 vid_out_spikes  = True if 1 else False
 del_prev        = True if 1 else False
@@ -221,26 +227,28 @@ if plot_cam_spikes:
 
     images_to_video(imgsU, fps=vid_fps, title='camera_spikes', scale=10)
 
-
-
+# ------------------------------------------------------------------ #
+# ------------------------------------------------------------------ #
+# ------------------------------------------------------------------ #
 
 if simulate_retina:
     print("Simulating network ---------------------------------------------")
-    ret_spikes, pop_shapes = run_sim(sim, on_time_ms, spikes, img_w, img_h, 
-                                     w2s=4.376069*1.01, 
-                                    #  w2s=3.95*1.01, 
-                                     competition_on=competition_on,
-                                     direction_on=direction_on)
+    ret_spikes, pop_shapes, lgn_spikes = run_sim(sim, on_time_ms, spikes,
+                                             img_w, img_h, w2s=4.376069*1.01,
+                                             competition_on=competition_on,
+                                             direction_on=direction_on)
 
     dump_compressed({'spikes': ret_spikes, 'shapes': pop_shapes},
                     'test_retina_spikes_and_shapes.pickle')
     # print(ret_spikes['on'].keys())
     # print(pop_shapes.keys())
-    print("\nPlotting output spikes:\n")
+    print("\nPlotting Retina's output spikes:\n")
     on_imgs    = []
     on_spikes  = []
     off_imgs   = []
     off_spikes = []
+    in_spikes  = []
+    out_spikes = []
     # for channel in ret_spikes.keys():
     for pop in ret_spikes[ret_spikes.keys()[0]]:
         if 'cam' in pop:
@@ -272,19 +280,7 @@ if simulate_retina:
             on_spikes[:]  = ret_spikes['on'][pop]['ganglion']
             off_spikes[:] = ret_spikes['off'][pop]['ganglion']
 
-        spikes_fig_on = plt.figure(1, figsize=(10, 7))
-        plt.plot([t for (_, t) in on_spikes], 
-                    [i for (i, _) in on_spikes], '|b', markersize=5,
-                    label='Output - Ganglion - (%d spikes)'%(len(on_spikes)) )
-
-        spikes_fig_off = plt.figure(2, figsize=(10, 7))
-        plt.plot([t for (_, t) in off_spikes], 
-                    [i for (i, _) in off_spikes], '|b', markersize=5,
-                    label='Output - Ganglion - (%d spikes)'%(len(off_spikes))
-                )
-
-
-        on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h, 
+        on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h,
                                                 0, on_time_ms, ftime_ms,
                                                 out_array=True, 
                                                 thresh=thresh*thresh_scale,
@@ -295,110 +291,88 @@ if simulate_retina:
                                                  thresh=thresh*thresh_scale,
                                                  up_down = False)
         if plot_out_spikes:
-            fig = plt.figure(3)
-            num_imgs = len(on_imgs)
-            rows = num_imgs//cols + (1 if num_imgs%cols else 0)
-            figw = 2.5
-            fig = plt.figure(figsize=(figw*cols, figw*rows))
-            # plt.suptitle("each square is %d ms"%(ftime_ms))
-            for i in range(num_imgs):
+            fname = "retina_out_spikes_filter_%s_competition_%s.pdf" % \
+                                (pop, 'on' if competition_on else 'off')
+            plot_image_set(on_imgs, fname, ftime_ms, off_imgs)
 
-                ax = plt.subplot(rows, cols, i+1)
-                if i == 0:
-                    ax.set_title("%d ms frame"%ftime_ms)
-                on_imgs[i][:, :, 0] = off_imgs[i][:, :, 0]
-                my_imshow(ax, on_imgs[i], cmap=None)
-
-            plt.savefig("out_spikes_filter_%s_competition_%s.png"%
-                        (pop, 'on' if competition_on else 'off'),
-                        dpi=300)
-            plt.close(fig)
         # plt.show()
-        if vid_out_spikes:
-            images_to_video(on_imgs, vid_fps, 
-                            "out_video_spikes_filter_%s_competition_%s"%
-                                       (pop, 'on' if competition_on else 'off'),
-                            scale=vid_scale, off_images=off_imgs)
+        # if vid_out_spikes:
+        images_to_video(on_imgs, vid_fps,
+                        "retina_out_video_spikes_filter_%s_competition_%s"%
+                                        (pop, 'on' if competition_on else 'off'),
+                        scale=vid_scale, off_images=off_imgs)
 
-        #bipolar population
-        if 'cam' in pop:
+
+    for ch in ret_spikes:
+        for p in ret_spikes[ch]:
+            if 'cam' in p:
+                continue
+
+            in_spikes[:]  = ret_spikes[ch][p]['bipolar']
+            out_spikes[:] = ret_spikes[ch][p]['ganglion']
+
+            in_color = 'cyan' if ch == 'on' else 'magenta'
+            fname = 'retina_raster_plot_filter_%s_channel_%s.pdf' % (p, ch)
+            plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, p, ch)
+
+    # ------------------------------------------------------------------- #
+
+    print("\nPlotting LGN's output spikes:\n")
+
+
+    ch = lgn_spikes.keys()[0]
+    for p in lgn_spikes[ch]:
+        # for lyr in lgn_spikes[ch][p]:
+        lyr = 'ganglion'
+        if 'cam' in p:
             continue
+
+        if 'dir' in p:
+            w = pop_shapes['direction']['width']
+            h = pop_shapes['direction']['height']
+        elif 'orient' in p:
+            w = pop_shapes['orientation']['width']
+            h = pop_shapes['orientation']['height']
         else:
-            on_spikes[:]  = ret_spikes['on'][pop]['bipolar']
-            off_spikes[:] = ret_spikes['off'][pop]['bipolar']
+            w = pop_shapes[p]['width']
+            h = pop_shapes[p]['height']
 
-        on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h, 
+        on_spikes[:]  = lgn_spikes['on'][p][lyr]
+        off_spikes[:] = lgn_spikes['off'][p][lyr]
+
+        on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h,
                                                 0, on_time_ms, ftime_ms,
-                                                out_array=True, 
-                                                thresh=thresh*thresh_scale,
-                                                up_down = True,)
+                                                out_array=True,
+                                                thresh=thresh * thresh_scale,
+                                                up_down=True, )
 
-        off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h, 
+        off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h,
                                                  0, on_time_ms, ftime_ms,
-                                                 out_array=True, 
-                                                 thresh=thresh*thresh_scale,
-                                                 up_down = False,)
+                                                 out_array=True,
+                                                 thresh=thresh * thresh_scale,
+                                                 up_down=False, )
 
         if plot_out_spikes:
-            fig = plt.figure(3)
-            num_imgs = len(on_imgs)
-            rows = num_imgs//cols + (1 if num_imgs%cols else 0)
-            figw = 2.5
-            fig = plt.figure(figsize=(figw*cols, figw*rows))
-            # plt.suptitle("each square is %d ms"%(ftime_ms))
-            for i in range(num_imgs):
-                ax = plt.subplot(rows, cols, i+1)
-                if i == 0:
-                    ax.set_title("%d ms frame"%ftime_ms)
-                
-                on_imgs[i][:, :, 0] = off_imgs[i][:, :, 0]
-                my_imshow(ax, on_imgs[i], cmap=None)
+            fname = "lgn_out_spikes_filter_%s_%s.pdf" % (p, lyr)
+            plot_image_set(on_imgs, fname, ftime_ms, off_imgs)
 
-            plt.savefig("bip_spikes_filter_%s_competition_%s.png"%
-                        (pop, 'on' if competition_on else 'off'),
-                        dpi=300)
-            plt.close(fig)
-
+        # plt.show()
         if vid_out_spikes:
-            images_to_video(on_imgs, vid_fps, 
-                            "bip_video_spikes_filter_%s_competition_%s"%
-                                       (pop, 'on' if competition_on else 'off'),
-                            scale=vid_scale, off_images=off_imgs)
-        plt.figure(1)
-        plt.plot([t for (_, t) in on_spikes], 
-                    [i for (i, _) in on_spikes], '.', 
-                    color='green', markersize=2,
-                    label='Input - Bipolar - (%d spikes)'%(len(on_spikes))
-                )
-        plt.ylabel('Neuron Id')
-        plt.xlabel('Time (ms)')
-        plt.margins(0.1, 0.1)
-        lgd = plt.legend(bbox_to_anchor=(1., 1.15), loc='upper right', 
-                            ncol=1)
-        plt.draw()
-        plt.savefig('raster_plot_filter_%s_channel_%s_competition_%s.png'%
-                    (pop, 'on', 'on' if competition_on else 'off'),
-                    bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    dpi=300)
-        
-        plt.close(spikes_fig_on)
+            images_to_video(on_imgs, vid_fps,
+                    "lgn_out_video_spikes_filter_%s_competition_%s" % (p, lyr),
+                    scale=vid_scale, off_images=off_imgs)
 
-        plt.figure(2)
-        plt.plot([t for (_, t) in off_spikes], 
-                    [i for (i, _) in off_spikes], '.', 
-                    color='red', markersize=2,
-                    label='Input - Bipolar - (%d spikes)'%(len(off_spikes))
-                )
-        plt.ylabel('Neuron Id')
-        plt.xlabel('Time (ms)')
-        plt.margins(0.1, 0.1)
-        lgd = plt.legend(bbox_to_anchor=(1., 1.15), loc='upper right', 
-                         ncol=1)
-        plt.draw()
-        plt.savefig('raster_plot_filter_%s_channel_%s_competition_%s.png'%
-                    (pop, 'off', 'on' if competition_on else 'off'),
-                    bbox_extra_artists=(lgd,), bbox_inches='tight',
-                    dpi=300)
-        
-        plt.close(spikes_fig_off)
+
+    for ch in lgn_spikes:
+        for p in lgn_spikes[ch]:
+            if 'cam' in p:
+                continue
+
+            in_spikes[:]  = ret_spikes[ch][p]['ganglion']
+            out_spikes[:] = lgn_spikes[ch][p]['ganglion']
+
+            in_color = 'cyan' if ch == 'on' else 'magenta'
+            fname = 'lgn_raster_plot_filter_%s_channel_%s.pdf' % (p, ch)
+            plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, p, ch)
+
 
