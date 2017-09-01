@@ -1,3 +1,4 @@
 from liquid_state_column import V1MultiColumn
 from four_to_one_column import V1FourToOneColumn
 from autoencoder_column import V1AutoEncoderColumn
+from simple_column import V1SimpleColumn

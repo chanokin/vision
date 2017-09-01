@@ -69,7 +69,7 @@ class BaseColumn(object):
             elif 'orient' in k:
                 krn_width = self.retina.cfg['orientation']['width']
             else:
-                krn_width = self.retina.cfg[k]
+                krn_width = self.retina.cfg[k]['width']
 
         return step, start, width, height, krn_width
 

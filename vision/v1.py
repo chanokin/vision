@@ -35,8 +35,10 @@ class V1():
             return V1AutoEncoderColumn
         elif self.unit_type == 'liquid_state':
             return V1MultiColumn
-        else:
+        elif self.unit_type == 'four-to-one':
             return V1FourToOneColumn
+        else:
+            return V1SimpleColumn
         
     def build_units(self):
         cfg = self.cfg

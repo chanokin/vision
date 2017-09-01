@@ -111,8 +111,9 @@ class V1SimpleColumn(BaseColumn):
         cfg = self.cfg
         sim = self.sim
         list_prob_conn = conn_std.list_probability_connector
-        key_to_pop = {'l4e': self.lgn.css, 'l2e': ['gabor', 'dir'],
-                      'l4i': self.lgn.css, 'l5e': []}
+        key_to_pop = {'l4e': self.lgn.css, 'l2e': ['orient', 'dir'],
+                      'l4i': self.lgn.css, 'l5e': [],
+                      'l0e': self.lgn.css}
         input_conns = {}
         dst_indices = []
         delay = cfg['input_delay']
@@ -177,10 +178,10 @@ class V1SimpleColumn(BaseColumn):
                                                      label=lbl)
         
         self.pops = pops
-        self.input_pop    = self.pops['l4']['exc']
-        self.output_pop   = self.pops['l2']['exc']
-        self.feedback_pop = self.pops['l5']['exc']
-        self.interconnect_pop = self.pops['l2']['exc']
+        self.input_pop    = self.pops['l0']['exc']
+        self.output_pop   = self.pops['l0']['exc']
+        self.feedback_pop = self.pops['l0']['exc']
+        self.interconnect_pop = self.pops['l0']['exc']
 
         if cfg['record']['voltages']:
             self.input_pop.record_v()
