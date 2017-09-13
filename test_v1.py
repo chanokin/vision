@@ -4,12 +4,12 @@ import cv2
 import time
 
 def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069, 
-            competition_on=True, direction_on=True):
+            competition_on=True, direction_on=True, learning_on=False):
     
     sim.setup(timestep=1., max_delay=140., min_delay=1.)
 
     if is_spinnaker(sim):
-        sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 200)
+        sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
         # sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
         # sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 50)
         # sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 1000)
@@ -39,7 +39,8 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
     mode = dvs_modes[MERGED]
     retina = Retina(sim, cam, img_w, img_h, mode, cfg=ret_cfg)
     lgn = LGN(sim, retina)
-    v1 = V1(sim, lgn, learning_on=False)
+    v1 = V1(sim, lgn, learning_on=learning_on)
+    v1_start_w = v1.get_input_weights(get_initial=True)
 
     start_time = time.time()
     print("\n Experiment will begin now...@ %s\n" %
@@ -112,11 +113,14 @@ def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069,
                 lgn_spikes[ch][p][lyr] = lgn.pops[ch][p][lyr].\
                                            getSpikes(compatible_output=True)
 
+    v1_spikes = v1.get_out_spikes()
 
+    v1_end_w = v1.get_input_weights()
 
     sim.end()
-
-    return out_spikes, retina.shapes, lgn_spikes
+    v1_dict = {'shape': (v1.cfg['in_receptive_width'], v1.cfg['in_receptive_width']),
+               'spikes': v1_spikes, 'init_w': v1_start_w, 'end_w': v1_end_w}
+    return out_spikes, retina.shapes, lgn_spikes, v1_dict
 
 def delete_prev_run():
     import os
@@ -148,7 +152,7 @@ cam_thresh_scale = 10
 frames = 200
 frames = 300
 frames = 500
-frames = 200
+frames = 90
 
 thresh = int(255*0.05) # just for plotting
 # thresh = int(255*0.1)
@@ -160,6 +164,14 @@ mnist_dir = "../pyDVS/mnist_spikes/" + \
             "inh_False___45_frames_" + \
             "at_90fps_%dx%d_res_spikes/" + \
             "t10k/"
+# mnist_dir = "../pyDVS/mnist_spikes/" + \
+#             "mnist_behave_SACCADE_" + \
+#             "pol_MERGED_enc_TIME_" + \
+#             "thresh_12_hist_99_00_"+ \
+#             "inh_False___90_frames_" + \
+#             "at_90fps_%dx%d_res_spikes/" + \
+#             "train/"
+
 mnist_dir = mnist_dir%(img_w, img_h)
 
 print("reading spikes from:")
@@ -172,7 +184,8 @@ print(mnist_dir)
 #
 plot_cam_spikes = True if 1 else False
 simulate_retina = True if 1 else False
-competition_on  = True if 0 else False
+compete_on      = True if 1 else False
+learn_on        = True if 1 else False
 direction_on    = True if 0 else False
 plot_out_spikes = True if 0 else False
 vid_out_spikes  = True if 1 else False
@@ -233,10 +246,13 @@ if plot_cam_spikes:
 
 if simulate_retina:
     print("Simulating network ---------------------------------------------")
-    ret_spikes, pop_shapes, lgn_spikes = run_sim(sim, on_time_ms, spikes,
-                                             img_w, img_h, w2s=4.376069*1.01,
-                                             competition_on=competition_on,
-                                             direction_on=direction_on)
+    ret_spikes, pop_shapes, lgn_spikes, v1_dict = \
+                            run_sim(sim, on_time_ms, spikes, img_w, img_h,
+                                    w2s=4.376069*1.01, learning_on=learn_on,
+                                    competition_on=compete_on,
+                                    direction_on=direction_on)
+
+    v1_spikes = v1_dict['spikes']
 
     dump_compressed({'spikes': ret_spikes, 'shapes': pop_shapes},
                     'test_retina_spikes_and_shapes.pickle')
@@ -292,14 +308,14 @@ if simulate_retina:
                                                  up_down = False)
         if plot_out_spikes:
             fname = "retina_out_spikes_filter_%s_competition_%s.pdf" % \
-                                (pop, 'on' if competition_on else 'off')
+                                (pop, 'on' if compete_on else 'off')
             plot_image_set(on_imgs, fname, ftime_ms, off_imgs)
 
         # plt.show()
         # if vid_out_spikes:
         images_to_video(on_imgs, vid_fps,
                         "retina_out_video_spikes_filter_%s_competition_%s"%
-                                        (pop, 'on' if competition_on else 'off'),
+                                        (pop, 'on' if compete_on else 'off'),
                         scale=vid_scale, off_images=off_imgs)
 
 
@@ -323,7 +339,7 @@ if simulate_retina:
     ch = lgn_spikes.keys()[0]
     for p in lgn_spikes[ch]:
         # for lyr in lgn_spikes[ch][p]:
-        lyr = 'ganglion'
+        lyr = 'relay'
         if 'cam' in p:
             continue
 
@@ -369,10 +385,40 @@ if simulate_retina:
                 continue
 
             in_spikes[:]  = ret_spikes[ch][p]['ganglion']
-            out_spikes[:] = lgn_spikes[ch][p]['ganglion']
+            out_spikes[:] = lgn_spikes[ch][p]['relay']
 
             in_color = 'cyan' if ch == 'on' else 'magenta'
             fname = 'lgn_raster_plot_filter_%s_channel_%s.pdf' % (p, ch)
             plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, p, ch)
 
 
+    # --------------------------------------------------------------------------- #
+    print("\nPlotting V1 output layer spikes:\n")
+    for r in v1_spikes:
+        for c in v1_spikes[r]:
+            print("\tUnit (%d, %d) total = %d" % (r, c, len(v1_spikes[r][c])))
+            if len(v1_spikes[r][c]) == 0:
+                continue
+            print("SOME SPIKES DETECTED")
+
+            plot_in_out_spikes([], v1_spikes[r][c], 'raster_v1_%03d_%03d'%(r, c),
+                               'cyan', 'output', 'both')
+
+            on_imgs[:] = imgs_in_T_from_spike_array(v1_spikes[r][c],
+                                                    6,# v1_dict['shape'][1]*2+1,
+                                                    7,# v1_dict['shape'][0]*2+1,
+                                                    0, on_time_ms, ftime_ms,
+                                                    out_array=True,
+                                                    thresh=thresh * thresh_scale,
+                                                    up_down=True,)
+            images_to_video(on_imgs, vid_fps,
+                            "v1_out_video_spikes_unit_%d_%d" % (r, c),
+                            scale=vid_scale)
+
+    for r in v1_dict['init_w']:
+        for c in v1_dict['init_w'][r]:
+            if np.array_equal(v1_dict['init_w'][r][c],
+                              v1_dict['end_w'][r][c]):
+                print("Weights remained the same for col %d, %d"%(r, c))
+            else:
+                print("Weights changed for col %d, %d" % (r, c))

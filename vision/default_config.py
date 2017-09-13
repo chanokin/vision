@@ -3,12 +3,34 @@ from sim_tools.connectors.mapping_funcs import  row_col_to_input, \
 import numpy as np
 
 exc_cell = "IF_curr_exp"
+# exc_cell_params = { 'cm': 0.25,  # nF
+#                   'i_offset': 0.0,
+#                   'tau_m': 10.0,
+#                   'tau_refrac': 3.0,
+#                   'tau_syn_E': 1., #2
+#                   'tau_syn_I': 2., #4
+#                   'v_reset': -70.0,
+#                   'v_rest': -65.0,
+#                   'v_thresh': -55.4
+#                   }
+#
+# inh_cell = "IF_curr_exp"
+# inh_cell_params = { 'cm': 0.25,  # nF
+#                   'i_offset': 0.0,
+#                   'tau_m': 10.0,
+#                   'tau_refrac': 2.0,
+#                   'tau_syn_E': 1., #2
+#                   'tau_syn_I': 1., #2
+#                   'v_reset': -70.0,
+#                   'v_rest': -65.0,
+#                   'v_thresh': -57.
+#                   }
 exc_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 3.0,
-                  'tau_syn_E': 1., #2
-                  'tau_syn_I': 2., #4
+                  'tau_syn_E': 2.,
+                  'tau_syn_I': 3.,
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
@@ -19,8 +41,8 @@ inh_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 2.0,
-                  'tau_syn_E': 1., #2
-                  'tau_syn_I': 1., #2
+                  'tau_syn_E': 1.,
+                  'tau_syn_I': 1.,
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -57.
@@ -46,8 +68,10 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 # inh_w2s = 1.78681
 # dir_w2s = 1.
 # ssamp_w2s = 4.376069
-g_w2s = 4.378681
-inh_w2s = 4.378681
+# g_w2s = 4.378681
+# inh_w2s = 4.378681
+g_w2s = 1.8
+inh_w2s = 1.8
 dir_w2s = 1.
 frame_rate = 100
 pix_dist = 0.25
@@ -56,7 +80,7 @@ dir_max_dist = 5
 dir_width = dir_max_dist*2 + 1
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 2.,
+                'kernel_exc_delay': 3.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.2,
@@ -65,13 +89,12 @@ defaults_retina = {
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
-
                 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
-                       'step': 1, 'start':1, 'w2s_mult':1.},
-                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                #         'step': 2, 'start': 3, 'w2s_mult': 1.},
+                       'step': 2, 'start':1, 'w2s_mult': 8.},
+                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                        'step': 4, 'start': 3, 'w2s_mult': 16.},
                 # 'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                #         'step': 5, 'start': 7, 'w2s_mult': 1.},
+                #         'step': 8, 'start': 7, 'w2s_mult': 1.},
                 # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
 
@@ -149,7 +172,7 @@ defaults_lgn = {
                  'kernel_inh_delay': 1.,
                  'cs': {'std_dev': 0.43, 'width': 3, 'wmult': 1.1} ,
                  'w2s': g_w2s*1.0,
-                 'inh_w2s': g_w2s*1.5,
+                 'inh_w2s': g_w2s*1.,
                  'inh_cell': {'cell': inh_cell,
                               'params': inh_cell_params
                              }, 
@@ -200,8 +223,8 @@ pop_ratio = {'l0': {'inh': 0.2, 'exc': 0.8}}
 #                          },
 #                   }
 
-column_conn_wgt = {'l0': {'exc2inh': g_w2s / 250., 'inh2exc': g_w2s,
-                          'exc2exc': g_w2s / 250., 'inh2inh': g_w2s}}
+column_conn_wgt = {'l0': {'exc2inh': g_w2s / 50., 'inh2exc': g_w2s*1.1,
+                          'exc2exc': g_w2s / 50., 'inh2inh': g_w2s*1.1}}
 
 w_conv = 1.#(g_w2s)/5.2 #5.2 is abs max weight in dict
 for l in column_conn_wgt:
@@ -240,9 +263,20 @@ input_conn_prob = {'main':  {'l0e': 1.00},
 # neurons_in_column = {'l2': 40,
 #                      'l4': 100,
 #                      'l5': 40}
+v1_exc_cell = "IF_curr_exp"
+v1_exc_cell_params = { 'cm': 0.25,  # nF
+                  'i_offset': 0.001,
+                  'tau_m': 10.0,
+                  'tau_refrac': 3.0,
+                  'tau_syn_E': 1., #2
+                  'tau_syn_I': 2., #4
+                  'v_reset': -70.0,
+                  'v_rest': -65.0,
+                  'v_thresh': -55.4
+                  }
 
-neurons_in_column = {'l0': 100}
-
+neurons_in_column = {'l0': 50}
+max_w_mult = 0.5
 defaults_v1 = { 'unit_type': unit_type,
                 'w2s': g_w2s,
                 'pop_ratio': pop_ratio,
@@ -250,40 +284,43 @@ defaults_v1 = { 'unit_type': unit_type,
                 'column_conn_wgt': column_conn_wgt,
                 'input_conn_prob': input_conn_prob,
                 'neurons_in_column': neurons_in_column,
+                'inter_unit_connect': False,
                 'inter_conn_prob': 0.2,#input_conn_prob['extra']['l2e'],
                 'inter_conn_weight': g_w2s*0.5,
                 'inter_conn_width': 3,
+                'inter_conn_delay': 1.,
                 'input_delay': 1,
                 'context_in_weight': 0.3,
                 'context_to_context_weight': 0.5, 
                 'context_to_simple_weight': 1., 
                 'min_delay': 2.,
                 'max_delay': 14.,
-                'max_weight': 1.7,
+                'max_weight': g_w2s*max_w_mult,
                 'wta_inh_cell': { 'cell': wta_inh_cell,
                                   'params': wta_inh_cell_params,
                                 }, 
                 'inh_cell': {'cell': inh_cell,
                              'params': inh_cell_params,
                             }, 
-                'exc_cell': {'cell': exc_cell,
-                             'params': exc_cell_params,
+                'exc_cell': {'cell': v1_exc_cell,
+                             'params': v1_exc_cell_params,
                             },
                 'record': {'voltages': False, 
-                           'spikes': False,
+                           'spikes': True,
                           },
                 'lat_inh': False,
                 'stdp': {'tau_plus': 20,
-                         'tau_minus': 20,
-                         'w_max': 0.25,
+                         'tau_minus': 24,
+                         'w_max': g_w2s*max_w_mult,
                          'w_min': 0.,
-                         'a_plus': 0.1,
-                         'a_minus': 0.12,
+                         'a_plus': 0.01,
+                         'a_minus': 0.012,
                         },
-                'in_receptive_width': 5,
-                'in_receptive_step':  10,
-                'in_receptive_start': 3,
+                'in_receptive_width': 7, # width
+                'in_receptive_step':  3, # step
+                'in_receptive_start': 3, # start
                 'min_scale_weight': 0.00001,
+                'min_weight': 0.00001,
                 'pix_in_weight': g_w2s*0.2,
                 'readout_w': 0.5,
                 'num_input_wta': 15,
@@ -291,11 +328,15 @@ defaults_v1 = { 'unit_type': unit_type,
                 'num_output': 25,
                 'in_to_liquid_exc_probability': 0.8,
                 'in_to_liquid_inh_probability': 0.5,
-                'col_weight_func': lambda dist: (g_w2s*1.)*np.exp(-dist/1.75),
+                # 'col_weight_func': lambda dist: (g_w2s*0.01)*np.exp(-dist/2.),
+                'col_weight_func': lambda dist: 0.01 *  np.exp(-(dist)/1.),
                 'build_complex': False,
                 'build_readout': False,
                 'complex_recp_width': 9,
                 'weight_dir': 'v1_column_weights',
+                'noise_per_unit': True,
+                'noise_weight': g_w2s*0.01,
+                'noise_rate': 20,#Hz
                }
 
 

@@ -711,7 +711,7 @@ def images_to_video(images, fps=100, title='output video', scale=10, outdir='./'
 def plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, pop, channel, close=True):
     fig = plt.figure(figsize=(10, 7))
     plt.plot([t for (_, t) in out_spikes],
-             [i for (i, _) in out_spikes], '|',
+             [i for (i, _) in out_spikes], 'x',
              color='blue', markersize=5,
              label='Output - filter %s - channel %s - (%d spikes)' %
                    (pop, channel, len(out_spikes))

@@ -155,17 +155,17 @@ class LGN():
                 pops[c][k]['inter']    = sim.Population(popsize,
                                                inh_cell, inh_parm,
                                                label='LGN inter %s %s'%(c, k))
-                pops[c][k]['ganglion'] = sim.Population(popsize,
+                pops[c][k]['relay'] = sim.Population(popsize,
                                                exc_cell, exc_parm,
                                                label='LGN output %s %s'%(c, k))
 
                 if cfg['record']['voltages']:
                     pops[c][k]['inter'].record_v()
-                    pops[c][k]['ganglion'].record_v()
+                    pops[c][k]['relay'].record_v()
 
                 if cfg['record']['spikes']:
                     pops[c][k]['inter'].record()
-                    pops[c][k]['ganglion'].record()
+                    pops[c][k]['relay'].record()
             
         self.pops = pops
 
@@ -197,14 +197,14 @@ class LGN():
 
                 split = self.conns[k]
                 projs[c][k]['exc'] = sim.Projection(self.retina.pops[c][k]['ganglion'],
-                                        self.pops[c][k]['ganglion'], split[EXC],
+                                        self.pops[c][k]['relay'], split[EXC],
                                         target='excitatory',
                                         label='retina to relay - %s - %s' %
                                               (c, k))
 
                 cntr_c = 'off' if c == 'on' else 'on'
                 projs[c][k]['inh'] = sim.Projection(self.pops[cntr_c][k]['inter'], 
-                                        self.pops[c][k]['ganglion'], split[INH],
+                                        self.pops[c][k]['relay'], split[INH],
                                         target='inhibitory',
                                         label='lgn inter %s to relay %s - %s' %
                                               (cntr_c, c, k))
