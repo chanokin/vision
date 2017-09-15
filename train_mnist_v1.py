@@ -1,5 +1,5 @@
 from common import *
-
+from vision.vision.mnist_config import defaults_retina
 import cv2
 import time
 
@@ -16,17 +16,17 @@ def set_sim(sim, spikes, img_w, img_h, w2s=4.376069, competition_on=True,
 
     cam.record()
     rbits = int(np.ceil(np.log2(img_h)))
-    ret_cfg = {'record': { 'voltages': False, 
+    ret_cfg = defaults_retina
+    ret_cfg['record'] = { 'voltages': False,
                            'spikes': True,
-                         },
-               # 'w2s': w2s,
-               'gabor': False,
-               'input_mapping_func': mapf.row_col_to_input,
-               'row_bits': rbits,
-               'lateral_competition': competition_on,
-               'split_cam_off_arg': False,
-               'plot_kernels': True,
-              }
+                         }
+    ret_cfg['gabor'] = False
+    ret_cfg['input_mapping_func'] = mapf.row_col_to_input
+    ret_cfg['row_bits'] = rbits
+    ret_cfg['lateral_competition'] = competition_on
+    ret_cfg['split_cam_off_arg'] = False
+    ret_cfg['plot_kernels'] = True
+
 
     if not direction_on:
         ret_cfg['direction'] = False
@@ -256,6 +256,7 @@ out_net_dir = './train_v1_dir'
 num_loops  = 1
 total_imgs = 100
 spikes = []
+imgsU = []
 dump_every = 1
 
 if del_prev:
@@ -280,7 +281,7 @@ for loop in range(num_loops):
             figw = 2.
 
             # print(spikes)
-            imgsU = imgs_in_T_from_spike_array(spikes, img_w, img_h,
+            imgsU[:] = imgs_in_T_from_spike_array(spikes, img_w, img_h,
                                                0, on_time_ms, ftime_ms,
                                                out_array=False,
                                                thresh=thresh*cam_thresh_scale,
