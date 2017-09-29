@@ -98,8 +98,14 @@ def key_is_false(key, dictionary):
     else:
         return dictionary[key] == False
 
-def file_len(fname):
-    with open(fname) as f:
-        for i, l in enumerate(f):
-            pass
+def file_len(fname, compressed=False):
+    if not compressed:
+        with open(fname) as f:
+            for i, l in enumerate(f):
+                pass
+    else:
+        with bz2.BZ2File(fname, 'rb') as f:
+            for i, l in enumerate(f):
+                pass
+
     return i + 1

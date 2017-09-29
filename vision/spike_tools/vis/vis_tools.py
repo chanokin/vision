@@ -195,7 +195,7 @@ def layer_to_imgs(nrn_ids, weights, src_neuron_pos, connections):
 
 
 def plot_imgs(imgs, figs_per_row, save=False, filename=None, min_v=0., max_v=2.):
-    import plt
+    import matplotlib.pyplot as plt
 
     i = 0
     n_imgs = len(imgs)
@@ -525,12 +525,12 @@ def spikes_in_time_range(spikes, from_t, to_t, start_idx=0):
 
 
 
-def img_from_spikes(spikes, img_width, height):
-    img = np.zeros((img_height*img_width), dtype=np.uint8)
+def img_from_spikes(spikes, width, height):
+    img = np.zeros((height*width), dtype=np.uint8)
     for spk in spikes:
         img[spk[0]] += 1
     
-    return img.reshape((img_height, img_width))
+    return img.reshape((height, width))
 
 def default_img_map(i, w, h):
     row = i//w
@@ -762,3 +762,77 @@ def plot_image_set(on_images, fname, ftime_ms, off_images=None,
         return None
     else:
         return fig
+
+def video_from_spike_array(spike_array, img_width, img_height,
+                           from_t, to_t, t_step, out_array=False,
+                           fps=50, scale=2,
+                           title='spikes_video', outdir='./',
+                           thresh=12, up_down=None,
+                           map_func=default_img_map,
+                           off_spikes=None):
+    import cv2
+    import os
+    UP = 1
+    DOWN = 0
+    num_neurons = img_width * img_height
+    if out_array:  # should be output spike format
+        mult = 2 if up_down is None else 1
+        print("\t\timgs_in_T, num neurons: %d" % (mult * num_neurons))
+        spike_array = out_to_spike_array(spike_array, mult * num_neurons)
+        if off_spikes is not None:
+            off_spikes = out_to_spike_array(off_spikes, mult * num_neurons)
+
+    spikes = [sorted(spk_ts) for spk_ts in spike_array]
+
+    img = np.zeros((img_height, img_width, 3), dtype=np.uint8)
+
+    nrn_start_idx = [0 for t in range(len(spikes))]
+
+    mspf = int(1000. / fps)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    title = title.replace(' ', '_')
+    title = title.replace(':', '_--_')
+    vid_shape = (img_width * scale, img_height * scale)
+    vid_out = cv2.VideoWriter(os.path.join(outdir, "%s.m4v" % title),
+                              fourcc, fps, vid_shape)
+
+    t_idx = 0
+    for t in range(from_t, to_t, t_step):
+        img[:] = 0
+        for nrn_id in range(len(spikes)):
+
+            if spikes[nrn_id] is None:
+                continue
+
+            if len(spikes[nrn_id]) == 0:
+                continue
+
+            nrn_id = np.uint32(nrn_id)
+            row, col, up_dn = map_func(nrn_id, img_width, img_height)
+            if off_spikes is not None:
+                up_dn = UP
+            elif up_down is not None:
+                up_dn = up_down
+
+
+            for spk_t in spikes[nrn_id][nrn_start_idx[nrn_id]:]:
+                if t <= spk_t < t + t_step:
+                    if img[row, col, up_dn] + thresh > 255:
+                        img[row, col, up_dn] = 255
+                    else:
+                        img[row, col, up_dn] += thresh
+                        # imgs[t_idx][row, col, up_dn] = 255
+
+                else:
+                    break
+                nrn_start_idx[nrn_id] += 1
+        # for c in range(3):
+        #     imgs[t_idx][:,:,c] = imgs[t_idx][:,:,c]/np.sum(imgs[t_idx][:,:,c])
+        vid_out.write(cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+                                 vid_shape, interpolation=cv2.INTER_NEAREST))
+        t_idx += 1
+
+        # for t_idx in range(len(imgs)):
+        # imgs[t_idx] = imgs[t_idx].reshape((img_height, img_width))
+    
+    vid_out.release()

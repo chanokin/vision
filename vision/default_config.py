@@ -28,7 +28,7 @@ exc_cell = "IF_curr_exp"
 exc_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
-                  'tau_refrac': 3.0,
+                  'tau_refrac': 2.0,
                   'tau_syn_E': 2.,
                   'tau_syn_I': 3.,
                   'v_reset': -70.0,
@@ -36,6 +36,26 @@ exc_cell_params = { 'cm': 0.25,  # nF
                   'v_thresh': -55.4
                   }
 
+exc_big_params = { 'cm': 0.25,  # nF
+                  'i_offset': 0.0,
+                  'tau_m': 10.0,
+                  'tau_refrac': 3.0,
+                  'tau_syn_E': 4.,
+                  'tau_syn_I': 5.,
+                  'v_reset': -70.0,
+                  'v_rest': -65.0,
+                  'v_thresh': -55.4
+                  }
+dir_cell_params = { 'cm': 0.25,  # nF
+                  'i_offset': 0.0,
+                  'tau_m': 10.0,
+                  'tau_refrac': 3.0,
+                  'tau_syn_E': 2., #2
+                  'tau_syn_I': 3., #4
+                  'v_reset': -70.0,
+                  'v_rest': -65.0,
+                  'v_thresh': -55.4
+                  }
 inh_cell = "IF_curr_exp"
 inh_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
@@ -80,7 +100,9 @@ dir_max_dist = 5
 dir_width = dir_max_dist*2 + 1
 defaults_retina = {
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 3.,
+                'channel_bits': 1,
+                'event_bits': 1,
+                'kernel_exc_delay': 2.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.2,
@@ -89,12 +111,15 @@ defaults_retina = {
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
-                'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
-                       'step': 2, 'start':1, 'w2s_mult': 8.},
+                'cs': {'std_dev': 0.72, 'sd_mult': 6.7, 'width': 5,
+                       'step': 2, 'start': 1, 'w2s_mult': 10.,
+                       'params': exc_cell_params},
                 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        'step': 4, 'start': 3, 'w2s_mult': 16.},
-                # 'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                #         'step': 8, 'start': 7, 'w2s_mult': 1.},
+                        'step': 4, 'start': 3, 'w2s_mult': 10.,
+                        'params': exc_big_params},
+                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                        'step': 8, 'start': 7, 'w2s_mult': 20.,
+                        'params': exc_big_params},
                 # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
 
@@ -152,6 +177,7 @@ defaults_retina = {
                 #             'step': 1,
                 #             'start': 0,
                 #             'sample_from': 'cam',
+                #             'params': dir_cell_params,
                 #             },
 
                 # 'input_mapping_func': row_col_to_input_breakout,

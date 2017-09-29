@@ -447,7 +447,7 @@ def img_spikes_from_to(path, num_neurons,
     for fname in spk_files[start:end]:
         # print(fname)
         # spks[:] = [ [] for i in range(num_neurons) ]
-        n_lines = file_len(fname)
+        n_lines = file_len(fname, compressed=True)
         
         # f = open(fname, 'r')
 

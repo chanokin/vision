@@ -1,5 +1,5 @@
 from common import *
-from vision.vision.mnist_config import defaults_retina
+from vision.mnist_config import defaults_retina
 import cv2
 import time
 
@@ -36,7 +36,16 @@ def set_sim(sim, spikes, img_w, img_h, w2s=4.376069, competition_on=True,
     lgn = LGN(sim, retina)
     v1 = V1(sim, lgn, learning_on=learning_on, input_conns=new_lists)
 
-    return retina, lgn, v1
+    return retina, lgn, v1, cam
+
+
+def add_time_to_spikes(spikes, loop, img_idx, total_imgs, run_time):
+    dt = (loop*total_imgs + img_idx)*run_time
+    for nid in range(len(spikes)):
+        for tidx in range(len(spikes[nid])):
+            spikes[nid][tidx] += dt
+
+    return spikes
 
 
 def run_sim(sim, run_time, img_w, img_h, retina, lgn, v1):
@@ -120,7 +129,6 @@ def run_sim(sim, run_time, img_w, img_h, retina, lgn, v1):
 
     v1_end_w = v1.get_input_weights()
 
-    sim.end()
     v1_dict = {'shape': (v1.cfg['in_receptive_width'], v1.cfg['in_receptive_width']),
                'spikes': v1_spikes, 'init_w': v1_start_w, 'end_w': v1_end_w}
     return out_spikes, retina.shapes, lgn_spikes, v1_dict
@@ -203,20 +211,21 @@ frames = 45
 thresh = int(255*0.05) # just for plotting
 # thresh = int(255*0.1)
 
-mnist_dir = "../pyDVS/mnist_spikes/" + \
-            "mnist_behave_SACCADE_" + \
-            "pol_MERGED_enc_TIME_" + \
-            "thresh_12_hist_95_00_"+ \
-            "inh_False___45_frames_" + \
-            "at_90fps_%dx%d_res_spikes/" + \
-            "t10k/"
-# mnist_dir = "../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_SACCADE_" + \
-#             "pol_MERGED_enc_TIME_" + \
-#             "thresh_12_hist_99_00_"+ \
-#             "inh_False___90_frames_" + \
-#             "at_90fps_%dx%d_res_spikes/" + \
-#             "train/"
+# mnist_dir = "../../pyDVS/mnist_spikes/" \
+#             "mnist_behave_SACCADE_" \
+#             "pol_MERGED_enc_TIME_" \
+#             "thresh_12_hist_95_00_" \
+#             "inh_False___45_frames_" \
+#             "at_90fps_%dx%d_res_spikes/" \
+#             "t10k/"
+
+mnist_dir = "../../pyDVS/mnist_spikes/" \
+            "mnist_behave_SACCADE_" \
+            "pol_MERGED_enc_TIME_" \
+            "thresh_12_hist_99_00_" \
+            "inh_False___90_frames_" \
+            "at_90fps_%dx%d_res_spikes/" \
+            "train/"
 
 mnist_dir = mnist_dir%(img_w, img_h)
 
@@ -266,26 +275,31 @@ if del_prev:
 for loop in range(num_loops):
 
     print("\n\nLoop %d/%d --- Num images %d\n"%(loop+1, num_loops, total_imgs))
-
+    first_img = True
     for img_idx in range(total_imgs):
         print("\n\nLoop %d/%d --- Image number %d/%d ---------------\n"%
               (loop+1, num_loops, img_idx+1, total_imgs))
 
         spikes[:] = pat_gen.img_spikes_from_to(spikes_dir, n_cam_neurons,
-                                img_idx, img_idx + 1, on_time_ms, off_time_ms,
-                                start_time, delete_before=delete_before)
+                            img_idx, img_idx + 1, on_time_ms, off_time_ms,
+                            start_time, delete_before=delete_before)
 
+        if loop > 0 or img_idx > 0:
+            spikes[:] = add_time_to_spikes(spikes, loop,
+                                img_idx, total_imgs, run_time)
 
         if plot_cam_spikes:
             cols = 10
             figw = 2.
 
             # print(spikes)
-            imgsU[:] = imgs_in_T_from_spike_array(spikes, img_w, img_h,
-                                               0, on_time_ms, ftime_ms,
-                                               out_array=False,
-                                               thresh=thresh*cam_thresh_scale,
-                                               map_func=cam_img_map)
+            vid_start_t = (loop*total_imgs + img_idx)*run_time
+            vid_end_t = vid_start_t + on_time_ms
+            imgsU[:] = imgs_in_T_from_spike_array(
+                            spikes, img_w, img_h,
+                            vid_start_t, vid_end_t, ftime_ms,
+                            out_array=False, thresh=thresh*cam_thresh_scale,
+                            map_func=cam_img_map)
 
             num_imgs = len(imgsU)
 
@@ -293,12 +307,15 @@ for loop in range(num_loops):
             images_to_video(imgsU, fps=vid_fps, scale=10,
                     title='camera_spikes_loop_%d_img_%d'%(loop, img_idx))
 
-
-        retina, lgn, v1 = set_sim(sim, spikes, img_w, img_h, w2s, compete_on,
-                                  direction_on, learn_on, new_lists)
+        if first_img:
+            retina, lgn, v1, cam = set_sim(sim, spikes, img_w, img_h, w2s, compete_on,
+                                      direction_on, learn_on, new_lists)
+            first_img = False
+        else:
+            cam.set("spike_times", spikes)
 
         ret_spikes, retina.shapes, lgn_spikes, v1_dict = \
-                        run_sim(sim, run_time, img_w, img_h, retina, lgn, v1)
+                            run_sim(sim, run_time, img_w, img_h, retina, lgn, v1)
 
         try:
             new_lists.clear()
@@ -306,7 +323,7 @@ for loop in range(num_loops):
         except:
             pass
 
-        new_lists = v1.updated_in_conn_lists(v1_dict['end_w'])
+        # new_lists = v1.updated_in_conn_lists(v1_dict['end_w'])
 
         if (img_idx)%dump_every == 0:
 
@@ -332,6 +349,8 @@ for loop in range(num_loops):
             print("\n\n ------------------------------------------------------- \n")
             print("DUMPING NETWORK at loop %d, img %d"%(loop + 1, img_idx + 1) )
             print("\n ------------------------------------------------------- \n")
+            if not os.path.isdir(os.path.join(os.getcwd(), out_net_dir)):
+                os.makedirs(os.path.join(os.getcwd(), out_net_dir))
 
             dump_compressed({#'retina': retina, 'lgn': lgn, 'v1': v1,
                              'ret_spikes': ret_spikes, 'lgn_spikes': lgn_spikes,
@@ -339,9 +358,10 @@ for loop in range(num_loops):
                             os.path.join(out_net_dir,
                                  'network_at_loop_%d__img_%d.pickle'%(loop, img_idx)))
 
-        for o in [retina, lgn, v1, ret_spikes, lgn_spikes, v1_dict]:
-            del o
+        # for o in [retina, lgn, v1, ret_spikes, lgn_spikes, v1_dict]:
+        #     del o
 
     # ------------------------------------------------------------------ #
     # ------------------------------------------------------------------ #
     # ------------------------------------------------------------------ #
+sim.end()
