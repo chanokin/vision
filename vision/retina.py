@@ -458,12 +458,25 @@ class Retina():
                     start = self.sample_start(post_key)
                     post_shape = (shapes[post_key]['height'], 
                                   shapes[post_key]['width'])
-                    krn = self.direction_kernels[k][WEIGHT]
-                    dly = self.direction_kernels[k][DELAY]
-                    inh_krn = np.rot90(krn.copy(), 2)*cfg['direction']['inh_w_scale']
-                    inh_dly = np.rot90(dly, 2)
-                    inh_dly[inh_dly > 0] +=  cfg['kernel_exc_delay']
 
+                    krn = self.direction_kernels[k][WEIGHT]
+                    dly = self.direction_kernels[k][DELAY]+cfg['kernel_exc_delay']
+                    # inh_krn = np.rot90(krn.copy(), 2)*cfg['direction']['inh_w_scale']
+                    inh_krn = np.ones_like(krn)*cfg['direction']['weight']* \
+                                                cfg['direction']['inh_w_scale']
+                    inh_krn[krn > 0] = 0.
+                    # inh_dly = np.rot90(dly, 2)
+                    # inh_dly[inh_dly > 0] += cfg['kernel_exc_delay']
+                    inh_dly = 1.#cfg['kernel_exc_delay']
+                    
+                    import matplotlib.pyplot as plt
+                    plt.figure()
+                    plt.subplot(1,2,1)
+                    plt.imshow(krn, cmap='Greys_r', interpolation='none')
+                    plt.subplot(1,2,2)
+                    plt.imshow(inh_krn, cmap='Greys_r', interpolation='none')
+                    plt.show()
+                    
                     if is_spinnaker(self.sim):
 
                         exc = sim.KernelConnector(pre_shape, post_shape,

@@ -18,8 +18,8 @@ dir_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 3.0,
-                  'tau_syn_E': 2., #2
-                  'tau_syn_I': 2., #4
+                  'tau_syn_E': 5., #2
+                  'tau_syn_I': 2.5, #4
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
@@ -58,15 +58,15 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 # inh_w2s = 1.78681
 # dir_w2s = 1.
 # ssamp_w2s = 4.376069
-g_w2s = 4.5#78681
-inh_w2s = 4.5#78681
+g_w2s = 4.8#78681
+inh_w2s = 4.8#78681
 
 frame_rate = 90
 pix_dist = 0.25
 dir_delay = int((1000./frame_rate)*pix_dist)
 dir_max_dist = 5
 dir_width = dir_max_dist*2 + 1
-dir_w2s = (g_w2s/(dir_max_dist-1))*(1.)
+dir_w2s = (g_w2s/(dir_max_dist-0.5))*(1.)
 defaults_retina = {
                 'channel_bits': 1,
                 'event_bits': 0,
@@ -125,12 +125,12 @@ defaults_retina = {
                             'weight': dir_w2s,
                             'delays': [1, 4, 6, 8],#, 3, 4 ],
                             'subsamp': 1,#2,
-                            'angle': 20.,
+                            'angle': 30.,
                             'dist': dir_max_dist,
                             'width': dir_width,
-                            'inh_w_scale': 0.25,
+                            'inh_w_scale': 1.,
                             'delay_func': lambda dist: dir_delay*dist,
-                            'weight_func': lambda d,a,w: w/(1.+a),
+                            'weight_func': lambda d,a,w: w/(1.+(0.01*d)+a),
                             'step': 2,
                             'start': 0,
                             'sample_from': 'cs',
