@@ -39,7 +39,7 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
     retina = Retina(sim, cam, img_w, img_h, mode, cfg=ret_cfg)
     #retina.cam['on'].record()
     
-    #lgn = LGN(sim, retina, cfg=defaults_lgn)
+    lgn = LGN(sim, retina, cfg=defaults_lgn)
 
     start_time = time.time()
     print("\n Experiment will begin now...@ %s\n" %
@@ -104,13 +104,13 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
 #                f.close()
 
     lgn_spikes = {}
-#    for ch in lgn.pops.keys():
-#        lgn_spikes[ch] = {}
-#        for p in lgn.pops[ch].keys():
-#            lgn_spikes[ch][p] = {}
-#            for lyr in  lgn.pops[ch][p]:
-#                lgn_spikes[ch][p][lyr] = lgn.pops[ch][p][lyr].\
-#                                           getSpikes(compatible_output=True)
+    for ch in lgn.pops.keys():
+        lgn_spikes[ch] = {}
+        for p in lgn.pops[ch].keys():
+            lgn_spikes[ch][p] = {}
+            for lyr in  lgn.pops[ch][p]:
+                lgn_spikes[ch][p][lyr] = lgn.pops[ch][p][lyr].\
+                                            getSpikes(compatible_output=True)
 
 
 
@@ -149,7 +149,8 @@ frames = 200
 frames = 300
 frames = 500
 frames = 90
-frames = 270
+# frames = 270
+# frames = 450
 
 thresh = int(255*0.05) # just for plotting
 # thresh = int(255*0.1)
@@ -176,12 +177,19 @@ mnist_dir = \
     "inh_False___90_frames_at_90fps_%dx%d_res_spikes/"\
     "train/"
 
-mnist_dir = \
-    "../../pyDVS/mnist_spikes" \
-    "/mnist_behave_TRAVERSE_pol_MERGED" \
-    "_enc_TIME_thresh_12_hist_99_00_" \
-    "inh_False___270_frames_at_90fps_%dx%d_res_spikes/"\
-    "train/"
+# mnist_dir = \
+    # "../../pyDVS/mnist_spikes" \
+    # "/mnist_behave_TRAVERSE_pol_MERGED" \
+    # "_enc_TIME_thresh_12_hist_99_00_" \
+    # "inh_False___270_frames_at_90fps_%dx%d_res_spikes/"\
+    # "train/"
+    # 
+# mnist_dir = \
+    # "../../pyDVS/mnist_spikes" \
+    # "/mnist_behave_TRAVERSE_pol_MERGED" \
+    # "_enc_TIME_thresh_12_hist_99_00_" \
+    # "inh_False___450_frames_at_90fps_%dx%d_res_spikes/"\
+    # "train/"
 
 mnist_dir = mnist_dir%(img_w, img_h)
 
@@ -343,62 +351,62 @@ if simulate_retina:
 
     # ------------------------------------------------------------------- #
 
-#    print("\nPlotting LGN's output spikes:\n")
-#
-#
-#    ch = lgn_spikes.keys()[0]
-#    for p in lgn_spikes[ch]:
-        # for lyr in lgn_spikes[ch][p]:
-#        lyr = 'relay'
-#        if 'cam' in p:
-#            continue
-#
-#        if 'dir' in p:
-#            w = pop_shapes['direction']['width']
-#            h = pop_shapes['direction']['height']
-#        elif 'orient' in p:
-#            w = pop_shapes['orientation']['width']
-#            h = pop_shapes['orientation']['height']
-#        else:
-#            w = pop_shapes[p]['width']
-#            h = pop_shapes[p]['height']
-#
-#        on_spikes[:]  = lgn_spikes['on'][p][lyr]
-#        off_spikes[:] = lgn_spikes['off'][p][lyr]
-#
-#        on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h,
-#                                                0, on_time_ms, ftime_ms,
-#                                                out_array=True,
-#                                                thresh=thresh * thresh_scale,
-#                                                up_down=True, )
-#
-#        off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h,
-#                                                 0, on_time_ms, ftime_ms,
-#                                                 out_array=True,
-#                                                 thresh=thresh * thresh_scale,
-#                                                 up_down=False, )
-#
-#        if plot_out_spikes:
-#            fname = "lgn_out_spikes_filter_%s_%s.pdf" % (p, lyr)
-#            plot_image_set(on_imgs, fname, ftime_ms, off_imgs)
-#
+    print("\nPlotting LGN's output spikes:\n")
+# #
+# #
+    ch = lgn_spikes.keys()[0]
+    for p in lgn_spikes[ch]:
+        for lyr in lgn_spikes[ch][p]:
+            lyr = 'relay'
+            if 'cam' in p:
+               continue
+# #
+            if 'dir' in p:
+                w = pop_shapes['direction']['width']
+                h = pop_shapes['direction']['height']
+            elif 'orient' in p:
+                w = pop_shapes['orientation']['width']
+                h = pop_shapes['orientation']['height']
+            else:
+                w = pop_shapes[p]['width']
+                h = pop_shapes[p]['height']
+    # #
+            on_spikes[:]  = lgn_spikes['on'][p][lyr]
+            off_spikes[:] = lgn_spikes['off'][p][lyr]
+    # #
+            on_imgs[:] = imgs_in_T_from_spike_array(on_spikes, w, h,
+                                                    0, on_time_ms, ftime_ms,
+                                                    out_array=True,
+                                                    thresh=thresh * thresh_scale,
+                                                    up_down=True, )
+    # # 
+            off_imgs[:] = imgs_in_T_from_spike_array(off_spikes, w, h,
+                                                     0, on_time_ms, ftime_ms,
+                                                     out_array=True,
+                                                     thresh=thresh * thresh_scale,
+                                                     up_down=False, )
+# #
+        if plot_out_spikes:
+            fname = "lgn_out_spikes_filter_%s_%s.pdf" % (p, lyr)
+            plot_image_set(on_imgs, fname, ftime_ms, off_imgs)
+# #
         # plt.show()
-#        if vid_out_spikes:
-#            images_to_video(on_imgs, vid_fps,
-#                    "lgn_out_video_spikes_filter_%s_competition_%s" % (p, lyr),
-#                    scale=vid_scale, off_images=off_imgs)
-#
-#
-#    for ch in lgn_spikes:
-#        for p in lgn_spikes[ch]:
-#            if 'cam' in p:
-#                continue
-#
-#            in_spikes[:]  = ret_spikes[ch][p]['ganglion']
-#            out_spikes[:] = lgn_spikes[ch][p]['relay']
-#
-#            in_color = 'cyan' if ch == 'on' else 'magenta'
-#            fname = 'lgn_raster_plot_filter_%s_channel_%s.pdf' % (p, ch)
-#            plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, p, ch)
+        if vid_out_spikes:
+            images_to_video(on_imgs, vid_fps,
+                    "lgn_out_video_spikes_filter_%s_competition_%s" % (p, lyr),
+                    scale=vid_scale, off_images=off_imgs)
+# #
+# #
+    for ch in lgn_spikes:
+        for p in lgn_spikes[ch]:
+            if 'cam' in p:
+                continue
+# #
+            in_spikes[:]  = ret_spikes[ch][p]['ganglion']
+            out_spikes[:] = lgn_spikes[ch][p]['relay']
+# #
+            in_color = 'cyan' if ch == 'on' else 'magenta'
+            fname = 'lgn_raster_plot_filter_%s_channel_%s.pdf' % (p, ch)
+            plot_in_out_spikes(in_spikes, out_spikes, fname, in_color, p, ch)
 
 

@@ -18,8 +18,8 @@ dir_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 3.0,
-                  'tau_syn_E': 5., #2
-                  'tau_syn_I': 2.5, #4
+                  'tau_syn_E': 2., #2
+                  'tau_syn_I': 2., #4
                   'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
@@ -62,11 +62,11 @@ g_w2s = 4.8#78681
 inh_w2s = 4.8#78681
 
 frame_rate = 90
-pix_dist = 0.25
+pix_dist = 0.5
 dir_delay = int((1000./frame_rate)*pix_dist)
 dir_max_dist = 5
 dir_width = dir_max_dist*2 + 1
-dir_w2s = (g_w2s/(dir_max_dist-0.5))*(1.)
+dir_w2s = (g_w2s/(dir_max_dist-1.))*(1.)
 defaults_retina = {
                 'channel_bits': 1,
                 'event_bits': 0,
@@ -83,12 +83,12 @@ defaults_retina = {
                 'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
                        'step': 1, 'start':1, 'w2s_mult': 1.,
                        'params': exc_cell_params},
-                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        # 'step': 2, 'start': 3, 'w2s_mult': 1.,
-                        # 'params': exc_cell_params},
-                # 'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        # 'step': 5, 'start': 7, 'w2s_mult': 2.,
-                        # 'params': exc_cell_params},
+                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+                        'step': 2, 'start': 3, 'w2s_mult': 1.,
+                        'params': exc_cell_params},
+                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+                        'step': 5, 'start': 7, 'w2s_mult': 2.,
+                        'params': exc_cell_params},
                 # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
                 'w2s': g_w2s, 
@@ -111,31 +111,31 @@ defaults_retina = {
                                 # 'sample_from': 'cam',
                                 # 'start': 3, 'step': 3,
                                # },
-                'direction': {'keys': [
-                                        'E',
-                                        'W',
-                                        'N',
-                                        'S',
-                                        #'NW', 'SW', 'NE', 'SE',
-                                        #'east', 'south', 'west', 'north',
-                                        #'south east', 'south west',
-                                        #'north east', 'north west'
-                                      ],
-                            'div': 4,#6,
-                            'weight': dir_w2s,
-                            'delays': [1, 4, 6, 8],#, 3, 4 ],
-                            'subsamp': 1,#2,
-                            'angle': 30.,
-                            'dist': dir_max_dist,
-                            'width': dir_width,
-                            'inh_w_scale': 1.,
-                            'delay_func': lambda dist: dir_delay*dist,
-                            'weight_func': lambda d,a,w: w/(1.+(0.01*d)+a),
-                            'step': 2,
-                            'start': 0,
-                            'sample_from': 'cs',
-                            'params': dir_cell_params,
-                            },
+                # 'direction': {'keys': [
+                                        # 'E',
+                                        # 'W',
+                                        # 'N',
+                                        # 'S',
+                                        # #'NW', 'SW', 'NE', 'SE',
+                                        # #'east', 'south', 'west', 'north',
+                                        # #'south east', 'south west',
+                                        # #'north east', 'north west'
+                                      # ],
+                            # 'div': 4,#6,
+                            # 'weight': dir_w2s,
+                            # 'delays': [1, 4, 6, 8],#, 3, 4 ],
+                            # 'subsamp': 1,#2,
+                            # 'angle': 30.,
+                            # 'dist': dir_max_dist,
+                            # 'width': dir_width,
+                            # 'inh_w_scale': 1.,
+                            # 'delay_func': lambda dist: dir_delay*dist,
+                            # 'weight_func': lambda d,a,w: w/(1.+(0.01*d)+a),
+                            # 'step': 2,
+                            # 'start': 0,
+                            # 'sample_from': 'cs',
+                            # 'params': dir_cell_params,
+                            # },
 
                 # 'input_mapping_func': row_col_to_input_breakout,
                 'input_mapping_func': row_col_to_input,

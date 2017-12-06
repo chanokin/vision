@@ -25,43 +25,55 @@ exc_cell = "IF_curr_exp"
 #                   'v_rest': -65.0,
 #                   'v_thresh': -57.
 #                   }
-exc_cell_params = { 'cm': 0.25,  # nF
+exc_cell_params = {'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
-                  'tau_refrac': 2.0,
-                  'tau_syn_E': 2.,
-                  'tau_syn_I': 3.,
-                  'v_reset': -70.0,
+                  'tau_refrac': 20.0, # one spike per frame :O
+                  'tau_syn_E': 1.,
+                  'tau_syn_I': 2.,
+                  'v_reset': -100.0,
+                  'v_rest': -65.0,
+                  'v_thresh': -55.4
+                  }
+exc2_cell_params = {'cm': 0.25,  # nF
+                  'i_offset': 0.0,
+                  'tau_m': 10.0,
+                  'tau_refrac': 20.0, # one spike per frame :O
+                  'tau_syn_E': 1.,
+                  'tau_syn_I': 2.,
+                  'v_reset': -100.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
 
-exc_big_params = { 'cm': 0.25,  # nF
-                  'i_offset': 0.0,
-                  'tau_m': 10.0,
-                  'tau_refrac': 3.0,
-                  'tau_syn_E': 4.,
-                  'tau_syn_I': 5.,
-                  'v_reset': -70.0,
-                  'v_rest': -65.0,
-                  'v_thresh': -55.4
-                  }
+dir_g_cell_params = { 'cm': 0.25,  # nF
+                     'i_offset': 0.0,
+                      'tau_m': 7.,
+                      'tau_refrac': 1.0,
+                      'tau_syn_E': 2., #2
+                      'tau_syn_I': 1., #4
+                      'v_reset': -80.0,
+                      'v_rest': -65.0,
+                      'v_thresh': -55.4
+                    }
+
 dir_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
-                  'tau_m': 10.0,
-                  'tau_refrac': 3.0,
-                  'tau_syn_E': 2., #2
-                  'tau_syn_I': 3., #4
-                  'v_reset': -70.0,
+                  'tau_m': 5.0,
+                  'tau_refrac': 1.0,
+                  'tau_syn_E': 1., #2
+                  'tau_syn_I': 1., #4
+                  'v_reset': -80.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
+
 inh_cell = "IF_curr_exp"
 inh_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 2.0,
-                  'tau_syn_E': 1.,
+                  'tau_syn_E': 2.,
                   'tau_syn_I': 1.,
                   'v_reset': -70.0,
                   'v_rest': -65.0,
@@ -73,7 +85,7 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
                        'i_offset': 0.0,
                        'tau_m': 4.0,
                        'tau_refrac': 2.0,
-                       'tau_syn_E': 2.,
+                       'tau_syn_E': 15.,
                        'tau_syn_I': 1.,
                        'v_reset': -70.0,
                        'v_rest': -65.0,
@@ -88,20 +100,39 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 # inh_w2s = 1.78681
 # dir_w2s = 1.
 # ssamp_w2s = 4.376069
-# g_w2s = 4.378681
-# inh_w2s = 4.378681
-g_w2s = 1.8
-inh_w2s = 1.8
-dir_w2s = 1.
-frame_rate = 100
-pix_dist = 0.25
-dir_delay = int((1000./frame_rate)*pix_dist)
-dir_max_dist = 5
+g_w2s = 4.378681
+inh_w2s = 4.378681
+
+# g_w2s = 1.8
+# inh_w2s = 1.8
+# dir_w2s = 1.
+
+
+
+# frame_rate = 90
+# pix_dist = 0.25
+# dir_delay = int((1000./frame_rate)*pix_dist)
+# dir_max_dist = 5
+# dir_width = dir_max_dist*2 + 1
+# dir_w2s = (g_w2s/(dir_max_dist-0.5))*(1.)
+
+frame_rate = 70
+pix_dist = 1.
+# dir_delay = int((1000./frame_rate)*pix_dist)
+dir_delay = 14 #says so in bkout.c
+# dir_delay = 42
+dir_max_dist = 2
 dir_width = dir_max_dist*2 + 1
+d_w2s = 3.54
+dir_w2s = 1.1*(d_w2s/(dir_max_dist+1.))
+inh_w_scale = 1.
+# inh_w_scale = 0.
+# dir_w2s = 2.
 defaults_retina = {
                 # 'kernel_width': 3,
                 'channel_bits': 1,
-                'event_bits': 1,
+                'event_bits': 2,
+                'height_bits': 8,
                 'kernel_exc_delay': 2.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
@@ -109,17 +140,26 @@ defaults_retina = {
                 'min_weight': 0.001,
                 'row_step': 1, 'col_step': 1,
                 'start_row': 0, 'start_col': 0,
+                # 'flatten_centre-surround': False,
+                'flatten_centre-surround': True,
+                'square_centre-surround': True,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
-                'cs': {'std_dev': 0.72, 'sd_mult': 6.7, 'width': 5,
-                       'step': 2, 'start': 1, 'w2s_mult': 10.,
-                       'params': exc_cell_params},
-                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        'step': 4, 'start': 3, 'w2s_mult': 10.,
-                        'params': exc_big_params},
-                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        'step': 8, 'start': 7, 'w2s_mult': 20.,
-                        'params': exc_big_params},
+                # 'cs': {'std_dev': 1., 'width': 5, 'step': 3, 'start': 1,
+                #        'w2s_mult': 1., 'params': exc_cell_params,
+                #        'flatten_threshold': 0.05,},
+                'cs': {'std_dev': 1.5, 'width': 11, 'step': 9, 'start': 5,
+                        'w2s_mult': 1., 'params': exc2_cell_params,
+                        'flatten_threshold': 0.001},
+                'cs3': {'std_dev': 2.5, 'width': 19, 'step': 17, 'start': 9,
+                        'w2s_mult': 1., 'params': exc_cell_params,
+                        'flatten_threshold': 0.0001},
+#                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
+#                        'step': 4, 'start': 3, 'w2s_mult': 10.,
+#                        'params': exc_big_params},
+#                'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
+#                        'step': 8, 'start': 7, 'w2s_mult': 20.,
+#                        'params': exc_big_params},
                 # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
 
@@ -153,39 +193,50 @@ defaults_retina = {
                 #                'sample_from': 'cam',
                 #                'start': 3, 'step': 3,
                 #               },
-                # 'direction': {'keys': [
-                #                         'E',
-                #                         # 'W',
-                #                         # 'N',
-                #                         # 'S',
-                #                         #'NW', 'SW', 'NE', 'SE',
-                #                         #'east', 'south', 'west', 'north',
-                #                         #'south east', 'south west',
-                #                         #'north east', 'north west'
-                #                       ],
-                #             'div': 4,#6,
-                #             'weight': dir_w2s,
-                #             'delays': [1, 4, 6, 8],#, 3, 4 ],
-                #             'subsamp': 1,#2,
-                #             # 'w2s': ssamp_w2s,
-                #             'angle': 60,
-                #             'dist': dir_max_dist,
-                #             'width': dir_width,
-                #             'delay_func': lambda dist: dir_delay*dist,
-                #                             #20ms = 1000/framerate
-                #             'weight_func': lambda d,a,w: w/(1.+a),
-                #             'step': 1,
-                #             'start': 0,
-                #             'sample_from': 'cam',
-                #             'params': dir_cell_params,
-                #             },
+
+                'direction': {'keys': [
+                                       'E',
+                                       'W',
+                                       'N',
+                                       'S',
+                                       #'east', 'south', 'west', 'north',
+                                      ],
+                            'div': 4,#6,
+                            'weight': dir_w2s,
+                            'delays': [1, 4, 6, 8],#, 3, 4 ],
+                            'subsamp': 1,#2,
+                            # 'w2s': ssamp_w2s,
+                            'angle': 10,
+                            # 'angle': 90,
+                            'dist': dir_max_dist,
+                            'width': dir_width,
+                            'inh_w_scale': inh_w_scale,
+                            'inh_delay': 1.,
+                            'inh_style': None, #same shape, opposite direction
+                            # 'inh_style': 'opposite', #same shape, opposite direction
+                            # 'inh_style': 'conjugate',  #every 0 turned to inh_w
+                            'delay_func': lambda d, a: \
+                                dir_delay * d if  a < 1. else \
+                                   dir_delay * np.round(d*1.5 + np.round(15./a)),
+                                            #20ms = 1000/framerate
+                            'weight_func': lambda d,a,w: w/(1.),
+                            # 'weight_func': lambda d,a,w: w,
+                            'bipolars': {'width':  7, 'start': 4, 'step': 6},
+                            'ganglion': {'width': dir_width,
+                                         'start': dir_width//2,
+                                         'step': dir_width//2 + 1,
+                                         'params': dir_g_cell_params},
+                            'sample_from': 'cam',
+                            'params': dir_cell_params,
+                            'w2s': d_w2s,
+                            },
 
                 # 'input_mapping_func': row_col_to_input_breakout,
                 'input_mapping_func': row_col_to_input,
-                'row_bits': 6,
-                'lateral_competition': True,
+                # 'lateral_competition': True,
+                'lateral_competition': False,
                 'split_cam_off_arg': False, #'height',
-                'plot_kernels': False,
+                'plot_kernels': True,
                 }
 
 
@@ -283,7 +334,7 @@ column_conn_prob = {'l0': {'exc2inh': 0.10, 'inh2exc': 0.10,
 #                    'extra': {'l2e': 0.20,}
 #                   }
 
-input_conn_prob = {'main':  {'l0e': 1.00},
+input_conn_prob = {'main':  {'l0e': 1., 'l0i': 0.5},
                   }
 
 # neurons_in_column = {'l2': 40,
@@ -296,12 +347,12 @@ v1_exc_cell_params = { 'cm': 0.25,  # nF
                   'tau_refrac': 3.0,
                   'tau_syn_E': 1., #2
                   'tau_syn_I': 2., #4
-                  'v_reset': -70.0,
+                  'v_reset': -80.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
 
-neurons_in_column = {'l0': 50}
+neurons_in_column = {'l0': 13}
 max_w_mult = 0.5
 defaults_v1 = { 'unit_type': unit_type,
                 'w2s': g_w2s,
@@ -335,16 +386,16 @@ defaults_v1 = { 'unit_type': unit_type,
                            'spikes': True,
                           },
                 'lat_inh': False,
-                'stdp': {'tau_plus': 20,
-                         'tau_minus': 24,
+                'stdp': {'tau_plus': 33,
+                         'tau_minus': 16,
                          'w_max': g_w2s*max_w_mult,
                          'w_min': 0.,
                          'a_plus': 0.01,
-                         'a_minus': 0.012,
+                         'a_minus': 0.01,
                         },
-                'in_receptive_width': 7, # width
-                'in_receptive_step':  3, # step
-                'in_receptive_start': 3, # start
+                'in_receptive_width': 21, # width
+                'in_receptive_step':  19, # step
+                'in_receptive_start': 10, # start
                 'min_scale_weight': 0.00001,
                 'min_weight': 0.00001,
                 'pix_in_weight': g_w2s*0.2,

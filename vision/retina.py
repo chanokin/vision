@@ -22,8 +22,11 @@ import sys
 
 class Retina():
     _DEBUG = True
+    def _dir_lyr(self, lyr):
+        return "direction_%s"%(lyr)
+
     def _dir_key(self, ang):
-        return "direction_%02s"%(ang)
+        return "direction_%s"%(ang)
 
     def _orient_key(self, ang):
         return "orientation_%03d"%int(ang)
@@ -32,9 +35,10 @@ class Retina():
                 cfg=defaults):
         
         print("Building Retina (%d x %d)"%(width, height))
-        
+
         for k in defaults.keys():
-            if k not in cfg.keys() and 'cs' not in k:
+            # if k not in cfg.keys() and 'cs' not in k:
+            if k not in cfg.keys():
                 cfg[k] = defaults[k]
 
         self.sim = simulator
@@ -58,7 +62,6 @@ class Retina():
 
         # self.css = ['cs', 'cs2', 'cs4']
         self.css = [ k for k in cfg.keys() if 'cs' in k ]
-
         for ccss in self.css:
             key = self._right_key(ccss)
             self.shapes[key]  = self.gen_shape(width, height, 
@@ -66,12 +69,44 @@ class Retina():
                                                cfg[ccss]['start'])
 
         if not key_is_false('direction', cfg):
+
             frm = cfg['direction']['sample_from']
             key = self._right_key('direction')
-            self.shapes[key] = self.gen_shape(self.shapes[frm]['width'], 
-                                              self.shapes[frm]['height'], 
-                                              cfg['direction']['step'],
-                                              cfg['direction']['start'])
+
+            for dir_str in cfg['direction']['keys']:
+                if dir_str.upper() == 'N' or dir_str.upper() == 'S' \
+                    or dir_str.upper() == 'NORTH' or dir_str.upper() == 'SOUTH':
+                    step_w = cfg['direction']['bipolars']['step']
+                    start_w = cfg['direction']['bipolars']['start']
+                    step_h = 1
+                    start_h = 0
+                else:
+                    step_h = cfg['direction']['bipolars']['step']
+                    start_h = cfg['direction']['bipolars']['start']
+                    step_w = 1
+                    start_w = 0
+
+                self.shapes[self._dir_key(dir_str)] = \
+                    self.gen_shape(self.shapes[frm]['width'],
+                        self.shapes[frm]['height'], step_w, start_w, step_h, start_h)
+
+                if dir_str.upper() == 'N' or dir_str.upper() == 'S' \
+                    or dir_str.upper() == 'NORTH' or dir_str.upper() == 'SOUTH':
+                    step_h = cfg['direction']['ganglion']['step']
+                    start_h = cfg['direction']['ganglion']['start']
+                    step_w = 1
+                    start_w = 0
+                else:
+                    step_w = cfg['direction']['ganglion']['step']
+                    start_w = cfg['direction']['ganglion']['start']
+                    step_h = 1
+                    start_h = 0
+
+                pre_key = self._dir_key(dir_str)
+                self.shapes[self._dir_key(dir_str+'G')] = \
+                    self.gen_shape(self.shapes[pre_key]['width'],
+                        self.shapes[pre_key]['height'], step_w, start_w, step_h, start_h)
+
 
         if not key_is_false('orientation', cfg):
             frm = cfg['orientation']['sample_from']
@@ -97,6 +132,9 @@ class Retina():
         print("\tBuilding kernels...")
         self.build_kernels()
         print("\t\tdone!")
+        # sys.exit()
+
+        print(self.shapes)
 
         print("\tBuilding connectors...")
         self.build_connectors()
@@ -115,11 +153,15 @@ class Retina():
         print("\t\tdone!")
 
 
-    def gen_shape(self, width, height, step, start):
+    def gen_shape(self, width, height, step, start, stp_h=None, stt_h=None):
+        if stp_h is None:
+            stp_h = step
+        if stt_h is None:
+            stt_h = start
         w = subsamp_size(start, width,  step)
-        h = subsamp_size(start, height,  step)
+        h = subsamp_size(stt_h, height,  stp_h)
         sh = {  'width': w, 'height': h, 'size': w*h,
-                'start': start, 'step': step}
+                'start': start, 'step': step, 'step_h': stp_h, 'start_h': stt_h}
         return sh
 
 
@@ -144,12 +186,13 @@ class Retina():
 
         if is_spinnaker(sim):
             print("\tMappingConnector")
-            on_conn  = sim.MappingConnector(in_width, in_height, 1, cfg['row_bits'],
+            on_conn  = sim.MappingConnector(in_width, in_height, ON, cfg['height_bits'],
                                             channel_bits=cfg['channel_bits'],
                                             event_bits=cfg['event_bits'],
                                             weights=cfg['w2s'],
                                             generate_on_machine=True)
-            off_conn = sim.MappingConnector(in_width, in_height, 0, cfg['row_bits'],
+
+            off_conn = sim.MappingConnector(in_width, in_height, OFF, cfg['height_bits'],
                                             channel_bits=cfg['channel_bits'],
                                             event_bits=cfg['event_bits'],
                                             weights=cfg['w2s'],
@@ -187,32 +230,32 @@ class Retina():
 
 
     
-    def _right_key(self, key):
+    def _right_key(self, key, direction=None):
         if 'orientation' in key or 'orient' in key:
             return 'orientation'
         elif 'direction' in key or 'dir' in key:
-            return 'direction'
+            return key#'direction'
         else:
             return key
         
-    def pop_size(self, key):
-        return self.shapes[self._right_key(key)]['size']
+    def pop_size(self, key, dir=None):
+        return self.shapes[self._right_key(key, dir)]['size']
     
-    def pop_width(self, key):
-        return self.shapes[self._right_key(key)]['width']
+    def pop_width(self, key, dir=None):
+        return self.shapes[self._right_key(key, dir)]['width']
     
-    def pop_height(self, key):
-        return self.shapes[self._right_key(key)]['height']
+    def pop_height(self, key, dir=None):
+        return self.shapes[self._right_key(key, dir)]['height']
 
-    def sample_step(self, key):
-        return self.shapes[self._right_key(key)]['step']
+    def sample_step(self, key, dir=None):
+        return self.shapes[self._right_key(key, dir)]['step']
     
-    def sample_start(self, key):
-        return self.shapes[self._right_key(key)]['start']
+    def sample_start(self, key, dir=None):
+        return self.shapes[self._right_key(key, dir)]['start']
 
 
     def get_output_keys(self):
-        return [k for k in self.pops['on'] if 'cam' not in k ]
+        return [k for k in self.pops['on'] if ('cam' not in k)]
 
 
     def build_kernels(self):
@@ -240,13 +283,27 @@ class Retina():
 
             # krns[ccss] *= inv_sum_pos * cfg['w2s'] * cfg[ccss]['w2s_mult']
             # krns[ccss] *= inv_sum_pos * cfg[ccss]['w2s_mult']
-            krns[ccss] = sum2one(krns[ccss]) 
+            krns[ccss] = sum2one(krns[ccss])
+            if key_is_true('flatten_centre-surround', cfg):
+                thr = cfg[ccss]['flatten_threshold']
+                rows, cols = np.where(krns[ccss]>=thr)
+                if key_is_true('square_centre-surround', cfg):
+                    rmin = np.min(rows)
+                    rmax = np.max(rows) + 1
+                    cmin = np.min(cols)
+                    cmax = np.max(cols) + 1
+                    krns[ccss][rmin:rmax, cmin:cmax] = 1.
+                else:
+                    krns[ccss][rows, cols] = 1.
+
             krns[ccss] *= cfg['w2s'] * cfg[ccss]['w2s_mult']
 
-            if 'plot_kernels' in cfg and cfg['plot_kernels']:
-                plot_kernel(krns[ccss], ccss)
+
+            if key_is_true('plot_kernels', cfg):
+                plot_kernel(krns[ccss], ccss, diagonal=False)
 
         self.cs = krns
+
 
         def o2k(a):
             return self._orient_key(a)
@@ -293,9 +350,12 @@ class Retina():
                 if Retina._DEBUG:
                     print("\t\tGenerating correlation %s <-> %s"%(cs0, cs1))
 
-                corr[cs0][cs1]  = krn_cs.correlationGaussian2D(
-                                        cfg[cs0]['width'],   cfg[cs1]['width'],
-                                        cfg[cs0]['std_dev'], cfg[cs1]['std_dev'])
+                if key_is_true('flatten_centre-surround', cfg):
+                    corr[cs0][cs1]  = correlate2d(krns[cs0], krns[cs1], 'same')
+                else:
+                    corr[cs0][cs1]  = krn_cs.correlationGaussian2D(
+                                            cfg[cs0]['width'],   cfg[cs1]['width'],
+                                            cfg[cs0]['std_dev'], cfg[cs1]['std_dev'])
 
                 corr[cs0][cs1] = sum2one(corr[cs0][cs1])
                 corr[cs0][cs1] *= cfg['inhw']*cfg['corr_w2s_mult']
@@ -319,30 +379,46 @@ class Retina():
 
         dir_krns = {}
         if not key_is_false('direction', cfg):
-            dkrn = krn_dir.direction_kernel
+            dir_krns['bipolars'] = {}
+            dir_krns['ganglion'] = {}
+
+            dkrn_g = krn_dir.direction_kernel
+            dkrn_b = krn_dir.direction_subsamp
             d2a = krn_dir.dir_to_ang
-            width = 2*cfg['direction']['dist'] + 1
             for direction in cfg['direction']['keys']:
                 if Retina._DEBUG:
                     print("\t\tGenerating direction kernel %s"%direction)
 
                 dk = d2k(direction)
-                dir_krns[dk] = dkrn(width, width,
-                                    1, # min delay
-                                    cfg['direction']['weight'],
-                                    d2a(direction),
-                                    cfg['direction']['angle'],
-                                    cfg['direction']['delay_func'],
-                                    cfg['direction']['weight_func'])
+
+                dir_krns['bipolars'][dk] = dkrn_b(cfg['direction']['bipolars']['width'],
+                                            d2a(direction), cfg['direction']['w2s'])
+
+                dir_krns['ganglion'][dk] = dkrn_g(cfg['direction']['ganglion']['width'],
+                                            cfg['direction']['ganglion']['width'],
+                                            1, # min delay
+                                            cfg['direction']['weight'],
+                                            d2a(direction),
+                                            cfg['direction']['angle'],
+                                            cfg['direction']['delay_func'],
+                                            cfg['direction']['weight_func'])
 
                 if key_is_true('plot_kernels', cfg):
                     # print(dir_krns[dk][WEIGHT])
-                    plot_kernel(dir_krns[dk][WEIGHT], 
-                                "direction_kernel_weight_%s"%(direction),
+                    plot_kernel(dir_krns['bipolars'][dk][WEIGHT],
+                                "direction_kernel_bipolar_weight_%s"%(direction),
                                 diagonal=False)
                     # print(dir_krns[dk][DELAY])
-                    plot_kernel(dir_krns[dk][DELAY], 
-                                "direction_kernel_delay_%s"%(direction),
+                    plot_kernel(dir_krns['bipolars'][dk][DELAY],
+                                "direction_kernel_bipolar_delay_%s"%(direction),
+                                diagonal=False)
+
+                    plot_kernel(dir_krns['ganglion'][dk][WEIGHT],
+                                "direction_kernel_weight_ganglion_%s"%(direction),
+                                diagonal=False)
+                    # print(dir_krns[dk][DELAY])
+                    plot_kernel(dir_krns['ganglion'][dk][DELAY],
+                                "direction_kernel_delay_ganglion_%s"%(direction),
                                 diagonal=False)
 
         dump_compressed({'ctr_srr': krns, 'cs_corr': corr, 
@@ -449,52 +525,30 @@ class Retina():
                     if Retina._DEBUG:
                         print("\t\tdirection: %s"%(dk))
 
-                    k = d2k(dk)
                     frm = cfg['direction']['sample_from']
                     pre_key = self._right_key(frm)
                     pre_shape = (shapes[pre_key]['height'], shapes[pre_key]['width'])
+                    k = d2k(dk)
                     post_key = self._right_key(k)
-                    step = self.sample_step(post_key)
-                    start = self.sample_start(post_key)
-                    post_shape = (shapes[post_key]['height'], 
+                    step = (shapes[post_key]['step_h'], shapes[post_key]['step'])
+                    start = (shapes[post_key]['start_h'], shapes[post_key]['start'])
+                    post_shape = (shapes[post_key]['height'],
                                   shapes[post_key]['width'])
 
-                    krn = self.direction_kernels[k][WEIGHT]
-                    dly = self.direction_kernels[k][DELAY]+cfg['kernel_exc_delay']
-                    # inh_krn = np.rot90(krn.copy(), 2)*cfg['direction']['inh_w_scale']
-                    inh_krn = np.ones_like(krn)*cfg['direction']['weight']* \
-                                                cfg['direction']['inh_w_scale']
-                    inh_krn[krn > 0] = 0.
-                    # inh_dly = np.rot90(dly, 2)
-                    # inh_dly[inh_dly > 0] += cfg['kernel_exc_delay']
-                    inh_dly = 1.#cfg['kernel_exc_delay']
-                    
-                    import matplotlib.pyplot as plt
-                    plt.figure()
-                    plt.subplot(1,2,1)
-                    plt.imshow(krn, cmap='Greys_r', interpolation='none')
-                    plt.subplot(1,2,2)
-                    plt.imshow(inh_krn, cmap='Greys_r', interpolation='none')
-                    plt.show()
-                    
-                    if is_spinnaker(self.sim):
+                    krn = self.direction_kernels['bipolars'][k][WEIGHT]
+                    dly = 1 + cfg['kernel_exc_delay']
 
+                    if is_spinnaker(self.sim):
+                        print(krn.shape)
                         exc = sim.KernelConnector(pre_shape, post_shape,
                                                   krn.shape,
-                                                  post_sample_steps=(step, step), 
-                                                  post_start_coords=(start, start),
+                                                  post_sample_steps=step,
+                                                  post_start_coords=start,
                                                   weights=krn*(krn > 0), 
                                                   delays=dly,
                                                   generate_on_machine=True)
-                        inh = sim.KernelConnector(pre_shape, post_shape,
-                                                  krn.shape,
-                                                  post_sample_steps=(step, step),
-                                                  post_start_coords=(start, start),
-                                                  weights=inh_krn*(inh_krn > 0),
-                                                  delays=inh_dly,
-                                                  generate_on_machine=True)
-                        # inh = None
-                        self.conns[ch][k] = {EXC: exc, INH: inh}
+
+                        self.conns[ch][k] = {EXC: exc}
 
 
 ######################################
@@ -631,22 +685,58 @@ class Retina():
                 self.extra_conns['ganglion'][k] = conn
         
         if not key_is_false('direction', cfg):
-            shape = (shapes[self._right_key(k)]['height'], 
-                     shapes[self._right_key(k)]['width'])
-            krn = self.corr['cs']['cs']
 
-            if is_spinnaker(self.sim):
-                exc = sim.OneToOneConnector(weights=cfg['w2s'],
-                                            delays=cfg['kernel_exc_delay'],
-                                            generate_on_machine=True)
-                inh = sim.KernelConnector(shape, shape,
-                                          krn.shape,
-                                          weights=krn*(krn > 0), 
-                                          delays=cfg['kernel_inh_delay'],
-                                          generate_on_machine=True)
-            conn = {EXC: exc, INH: inh,}
+            for dir_str in cfg['direction']['keys']:
+                _key = 'direction_%s'%(dir_str)
+                post_key = _key+'G'
+                pre_shape = (shapes[_key]['height'], shapes[_key]['width'])
+                post_shape = (shapes[post_key]['height'], shapes[post_key]['width'])
+                start = (shapes[post_key]['start_h'], shapes[post_key]['start'])
+                step = (shapes[post_key]['step_h'], shapes[post_key]['step'])
+                krn = self.direction_kernels['ganglion'][_key][WEIGHT]
+                dly = (self.direction_kernels['ganglion'][_key][DELAY] + \
+                        cfg['kernel_exc_delay']) * (krn > 0)
+                print(krn)
+                print(dly)
+                inh_krn = np.zeros_like(krn)
+                if cfg['direction']['inh_style'] == 'conjugate':
+                    inh_krn[krn == 0] = cfg['direction']['weight'] * \
+                                        cfg['direction']['inh_w_scale']
+                    inh_krn[inh_krn.shape[0] // 2, inh_krn.shape[0] // 2] = 0.
+                elif cfg['direction']['inh_style'] == 'opposite':
+                    inh_krn[:] = np.rot90(krn, 2) * cfg['direction']['inh_w_scale']
+                    inh_krn[inh_krn.shape[0] // 2, inh_krn.shape[0] // 2] = 0.
+                else:
+                    del inh_krn
+                    inh_krn = None
 
-            self.extra_conns['ganglion']['dir'] = conn
+                print(inh_krn)
+                inh_dly = cfg['direction']['inh_delay']
+
+                if is_spinnaker(self.sim):
+                    exc = sim.KernelConnector(pre_shape, post_shape,
+                                              krn.shape,
+                                              post_sample_steps=step,
+                                              post_start_coords=start,
+                                              weights=krn * (krn > 0),
+                                              delays=dly,
+                                              generate_on_machine=True)
+                    if inh_krn is None:
+                        inh = None
+                    else:
+                        inh = sim.KernelConnector(pre_shape, post_shape,
+                                                  krn.shape,
+                                                  post_sample_steps=step,
+                                                  post_start_coords=start,
+                                                  weights=inh_krn * (inh_krn > 0),
+                                                  delays=inh_dly,
+                                                  generate_on_machine=True)
+                    if inh is not None:
+                        print(inh_krn)
+
+                    conn = {EXC: exc, INH: inh,}
+
+                self.extra_conns['ganglion'][_key] = conn
 
         #bipolar/interneuron to ganglion (use row-major mapping)
         self.lat_conns = {}
@@ -717,9 +807,9 @@ class Retina():
         for k in self.conns.keys(): 
             # print("populations for channel %s"%k)
             self.pops[k] = {}
-            # self.pops[k]['cam_inter'] = sim.Population(self.width*self.height,
-            #                                            inh_cell, inh_parm,
-            #                                            label='cam_inter_%s'%k)
+            self.pops[k]['cam_inter'] = sim.Population(self.width*self.height,
+                                                       inh_cell, inh_parm,
+                                                       label='cam_inter_%s'%k)
             # if key_is_true('voltages', cfg['record']):
             #     self.pops[k]['cam_inter'].record_v()
             #
@@ -732,10 +822,14 @@ class Retina():
                 filter_size = self.pop_size(p)
                 if 'cs' in p:
                     params = cfg[p]['params']
+                    g_params = exc_parm
                 elif 'dir' in p:
-                    params = cfg[self._right_key(p)]['params']
+                    params = cfg['direction']['params']
+                    g_params = cfg['direction']['ganglion']['params']
                 else:
                     params = exc_parm
+                    g_params = params
+
                 self.pops[k][p] = {'bipolar': sim.Population(
                                             filter_size, exc_cell, params,
                                             label='Retina: bipolar_%s_%s'%(k, p)),
@@ -745,7 +839,7 @@ class Retina():
                                             label='Retina: inter_%s_%s'%(k, p)),
 
                                     'ganglion': sim.Population(
-                                            filter_size, exc_cell, exc_parm,
+                                            filter_size, exc_cell, g_params,
                                             label='Retina: ganglion_%s_%s'%(k, p)),
                                   }
                 if key_is_true('voltages', cfg['record']):
@@ -768,13 +862,15 @@ class Retina():
         for k in self.channels:
             k = self.channels[k]
             self.projs[k] = {}
-            # self.projs[k]['cam_inter'] = {}
-            # pre  = self.cam[k]
-            # post = self.pops[k]['cam_inter']
+            self.projs[k]['cam_inter'] = {}
+            pre  = self.cam[k]
+            post = self.pops[k]['cam_inter']
             # conn = self.extra_conns['o2o']
-            # exc = sim.Projection(pre, post, conn, target='excitatory',
-            #                      label='cam to cam inter %s'%k)
-            # self.projs[k]['cam_inter']['cam2intr'] = [exc]
+            conn = sim.OneToOneConnector(weights=cfg['w2s'],
+                                         generate_on_machine=True)
+            exc = sim.Projection(pre, post, conn, target='excitatory',
+                                 label='cam to cam inter %s'%k)
+            self.projs[k]['cam_inter']['cam2intr'] = [exc]
 
         # photo to bipolar, 
         # bipolar to interneurons and 
@@ -806,16 +902,19 @@ class Retina():
                                      conn, target='excitatory',
                                      label='in to bipolar %s-%s'%(ch, p))
 
-                if self.conns[ch][p][INH]:
+                if INH in self.conns[ch][p] and self.conns[ch][p][INH]:
                     if 'cs' in p:
                         frm = 'cam_inter'
-                        pop = self.pops[ch]['cam_inter']
+                        pop = self.pops[ch][frm]
                     elif 'orient' in p:
                         frm = cfg['orientation']['sample_from']
                         pop = self.pops[ch][frm]['inter']
                     elif 'dir' in p:
                         frm = cfg['direction']['sample_from']
-                        pop = self.pops[ch][frm]['inter']
+                        if 'cam' == frm:
+                            pop = self.cam[ch]['cam_inter']
+                        else:
+                            pop = self.pops[ch][frm]['inter']
                         
                     inh = sim.Projection(pop, self.pops[ch][p]['bipolar'],
                                          conn, target='inhibitory',
@@ -834,13 +933,13 @@ class Retina():
                     inter = self.extra_conns['inter']['orientation']
                     _exc = self.extra_conns['ganglion'][p][EXC]
                     _inh = self.extra_conns['ganglion'][p][INH]
-                    print(inter)
-                    print(_exc)
-                    print(_inh)
+                    # print(inter)
+                    # print(_exc)
+                    # print(_inh)
                 elif 'dir' in p:
                     inter  = self.extra_conns['inter']['dir']
-                    _exc = self.extra_conns['ganglion']['dir'][EXC]
-                    _inh = self.extra_conns['ganglion']['dir'][INH]
+                    _exc = self.extra_conns['ganglion'][p][EXC]
+                    _inh = self.extra_conns['ganglion'][p][INH]
 
 
                 exc = sim.Projection(self.pops[ch][p]['bipolar'],

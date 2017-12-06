@@ -769,7 +769,10 @@ def video_from_spike_array(spike_array, img_width, img_height,
                            title='spikes_video', outdir='./',
                            thresh=12, up_down=None,
                            map_func=default_img_map,
-                           off_spikes=None):
+                           off_spikes=None, max_ratio=2.):
+    from_t = int(from_t)
+    to_t = int(to_t)
+    t_step = int(t_step)
     import cv2
     import os
     UP = 1
@@ -784,19 +787,45 @@ def video_from_spike_array(spike_array, img_width, img_height,
 
     spikes = [sorted(spk_ts) for spk_ts in spike_array]
 
-    img = np.zeros((img_height, img_width, 3), dtype=np.uint8)
+    w2h_ratio = float(img_width)/float(img_height)
+    h2w_ratio = float(img_height)/float(img_width)
+    if w2h_ratio > max_ratio:
+        print("wider image (w, h, r) = %s, %s, %s"%
+              (img_width, img_height, w2h_ratio))
+        rows_per_spike = int(w2h_ratio)
+        cols_per_spike = 1
+        img = np.zeros((img_width, img_width, 3), dtype=np.uint8)
+        vid_shape = (img_width * scale, img_width * scale)
+    elif h2w_ratio > max_ratio:
+        print("taller image (w, h, r) = %s, %s, %s"%
+              (img_width, img_height, h2w_ratio))
+        rows_per_spike = 1
+        cols_per_spike = int(h2w_ratio)
+        img = np.zeros((img_height, img_height, 3), dtype=np.uint8)
+        vid_shape = (img_height * scale, img_height * scale)
+    else:
+        rows_per_spike = 1
+        cols_per_spike = 1
+        vid_shape = (img_width * scale, img_height * scale)
+        img = np.zeros((img_height, img_width, 3), dtype=np.uint8)
+
 
     nrn_start_idx = [0 for t in range(len(spikes))]
+
+    if off_spikes is not None:
+        off_nrn_start_idx = [0 for t in range(len(off_spikes))]
 
     mspf = int(1000. / fps)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     title = title.replace(' ', '_')
     title = title.replace(':', '_--_')
-    vid_shape = (img_width * scale, img_height * scale)
+
+
     vid_out = cv2.VideoWriter(os.path.join(outdir, "%s.m4v" % title),
                               fourcc, fps, vid_shape)
 
     t_idx = 0
+    off_t_idx = 0
     for t in range(from_t, to_t, t_step):
         img[:] = 0
         for nrn_id in range(len(spikes)):
@@ -813,19 +842,56 @@ def video_from_spike_array(spike_array, img_width, img_height,
                 up_dn = UP
             elif up_down is not None:
                 up_dn = up_down
+            else:
+                up_dn = UP
 
 
             for spk_t in spikes[nrn_id][nrn_start_idx[nrn_id]:]:
                 if t <= spk_t < t + t_step:
-                    if img[row, col, up_dn] + thresh > 255:
-                        img[row, col, up_dn] = 255
+                    rrr = rows_per_spike * row
+                    ccc = cols_per_spike * col
+                    if img[rrr, ccc, up_dn] + thresh > 255:
+                        img[rrr:rrr + rows_per_spike,
+                            ccc:ccc + cols_per_spike, up_dn] = 255
                     else:
-                        img[row, col, up_dn] += thresh
+                        img[rrr:rrr + rows_per_spike,
+                            ccc:ccc + cols_per_spike, up_dn] += thresh
                         # imgs[t_idx][row, col, up_dn] = 255
 
                 else:
                     break
                 nrn_start_idx[nrn_id] += 1
+
+        if off_spikes is not None:
+            for nrn_id in range(len(off_spikes)):
+
+                if off_spikes[nrn_id] is None:
+                    continue
+
+                if len(off_spikes[nrn_id]) == 0:
+                    continue
+
+                nrn_id = np.uint32(nrn_id)
+                row, col, up_dn = map_func(nrn_id, img_width, img_height)
+                up_dn = DOWN
+
+                for spk_t in off_spikes[nrn_id][off_nrn_start_idx[nrn_id]:]:
+                    if t <= spk_t < t + t_step:
+                        rrr = rows_per_spike * row
+                        ccc = cols_per_spike * col
+
+                        if img[rrr, ccc, up_dn] + thresh > 255:
+                            img[rrr:rrr + rows_per_spike,
+                                ccc:ccc + cols_per_spike, up_dn] = 255
+                        else:
+                            img[rrr:rrr + rows_per_spike,
+                                ccc:ccc + cols_per_spike, up_dn] += thresh
+                            # imgs[t_idx][row, col, up_dn] = 255
+
+                    else:
+                        break
+                    off_nrn_start_idx[nrn_id] += 1
+
         # for c in range(3):
         #     imgs[t_idx][:,:,c] = imgs[t_idx][:,:,c]/np.sum(imgs[t_idx][:,:,c])
         vid_out.write(cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
