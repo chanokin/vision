@@ -38,6 +38,8 @@ class V1():
             return V1MultiColumn
         elif self.unit_type == 'four-to-one':
             return V1FourToOneColumn
+        elif self.unit_type == 'dopamine':
+            return V1DopamineColumn
         else:
             return V1SimpleColumn
 

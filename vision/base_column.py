@@ -82,9 +82,9 @@ class BaseColumn(object):
         #location is in highest input resolution scale (i.e. 'ctr_srr')
         hkw = half_krn_width
         fr_r = max(0, self.location[ROW] - hkw)
-        to_r = min(self.height, self.location[ROW] + hkw + 2)
+        to_r = min(self.height, self.location[ROW] + hkw + 1)
         fr_c = max(0, self.location[COL] - hkw)
-        to_c = min(self.width,  self.location[COL] + hkw + 2)
+        to_c = min(self.width,  self.location[COL] + hkw + 1)
         
         return {ROW:fr_r, COL:fr_c}, {ROW:to_r, COL:to_c}
 
@@ -111,12 +111,15 @@ class BaseColumn(object):
             step, start, width, height, krn_width = self.get_map_params(k)
             half_krn_w = max(krn_width//2, half_rec_w)
             # print(krn_width//2, half_rec_w, half_krn_w)
-            frm, to = self.get_row_col_limits(half_krn_w)
+            frm.clear()
+            to.clear()
             sanity.clear()
-            
+
+            frm, to = self.get_row_col_limits(half_krn_w)
+
             for r in range(frm[ROW], to[ROW]): #r in full resolution space
                 ssmp_r = subsamp_size(start, r, step) # to sub-sampled space
-                if ssmp_r >= height: ### too large for lgn dimension
+                if 0 >= ssmp_r >= height: ### too large for lgn dimension
                     continue
                     
                 if ssmp_r not in sanity:
@@ -125,7 +128,7 @@ class BaseColumn(object):
                 for c in range(frm[COL], to[COL]): #c in full resolution space
                     ssmp_c = subsamp_size(start, c, step) # to sub-sampled space
 
-                    if ssmp_c >= width: ### too large for lgn dimension
+                    if 0 >= ssmp_c >= width: ### too large for lgn dimension
                         continue
 
                     if ssmp_c in sanity[ssmp_r]:
@@ -137,7 +140,9 @@ class BaseColumn(object):
                     w = self.in_weight_func(d)
                     if w < cfg['min_scale_weight']:
                         continue
-                    
+                    if src < 0:
+                        continue
+
                     # print_debug(("%d*%d + %d = %d"%(ssmp_r, width, ssmp_c, src), w))
                     sanity[ssmp_r].append(ssmp_c)                        
                     indices[k].append( src )

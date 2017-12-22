@@ -1,7 +1,7 @@
 from base_column import *
 
 
-class V1SimpleColumn(BaseColumn):
+class V1DopamineColumn(BaseColumn):
     
     def __init__(self, sim, lgn, width, height, location, learning_on, cfg,
                  input_conns):
@@ -313,9 +313,19 @@ class V1SimpleColumn(BaseColumn):
                     ws[ch][pop] = {}
 
                     for cn_k in self.input_projs[ch][pop]:
+                        
                         w = self.input_projs[ch][pop][cn_k].\
                                               getWeights(format='array')
-                        ws[ch][pop][cn_k] = np.array(w)
+                        fname = "%03d_%03d_%s_%s_%s.npy" % \
+                            (self.location[ROW], self.location[COL], 
+                             ch, pop, cn_k)
+                        fname = os.path.join(os.getcwd(), "temp_weight_dir",
+                                            fname)
+                        wmmap = np.memmap(fname, dtype='float16', mode='w+',
+                                        shape=w.shape)
+                        # ws[ch][pop][cn_k] = np.array(w)
+                        wmmap[:] = w[:]
+                        ws[ch][pop][cn_k] = wmmap
             return ws
 
 
@@ -348,3 +358,24 @@ class V1SimpleColumn(BaseColumn):
 
 
 
+    def get_synapse_dynamics(self, src, dst):
+        if not self.learn_on or src == 'inh' or dst == 'inh':
+            return None
+            
+        cfg = self.cfg['stdp']
+        sim = self.sim
+        
+        stdp_model = sim.STDPMechanism(
+            timing_dependence = sim.SpikePairRule(tau_plus=cfg['tau_plus'], 
+                                                  tau_minus=cfg['tau_minus'],
+                                                  tau_c=cfg['tau_c'],
+                                                  tau_d=cfg['tau_d']),
+            weight_dependence = sim.AdditiveWeightDependence(w_min=cfg['w_min'], 
+                                                             w_max=cfg['w_max'], 
+                                                             A_plus=cfg['a_plus'], 
+                                                             A_minus=cfg['a_minus']),
+            neuromodulation=True
+        )
+        syn_dyn = sim.SynapseDynamics(slow=stdp_model)
+        
+        return syn_dyn

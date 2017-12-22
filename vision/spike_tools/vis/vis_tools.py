@@ -484,12 +484,23 @@ def plot_spikes(spike_array, max_y=None, pad = 2, title="", marker='.',
 
 def plot_output_spikes(spikes, pad=0, marker='.', color='blue', markersize=4,
                        plotter=plt, max_y=None, pad_y=2, markeredgewidth=0,
-                       markeredgecolor='none'):
+                       markeredgecolor='none', from_t=0, to_t=None):
+    # print(spikes)
     if len(spikes) == 0:
         return 0
-        
-    spike_times = [spike_time for (neuron_id, spike_time) in spikes]
-    spike_ids  = [neuron_id for (neuron_id, spike_time) in spikes]
+    if to_t is not None:
+        spike_times = [spike_time for (neuron_id, spike_time) in spikes \
+                                            if from_t <= spike_time < to_t]
+        spike_ids  = [neuron_id for (neuron_id, spike_time) in spikes \
+                                            if from_t <= spike_time < to_t]
+    else:
+        spike_times = [spike_time for (neuron_id, spike_time) in spikes \
+                                            if from_t <= spike_time]
+        spike_ids  = [neuron_id for (neuron_id, spike_time) in spikes \
+                                            if from_t <= spike_time]
+    min_t = np.min(spike_times)
+    max_t = np.max(spike_times)
+
     # print(np.max(spike_times), np.min(spike_times))
     # print(np.max(spike_ids), np.min(spike_ids))
     max_id = 0 if len(spike_ids) == 0 else np.max(spike_ids)
@@ -500,12 +511,12 @@ def plot_output_spikes(spikes, pad=0, marker='.', color='blue', markersize=4,
     spike_ids[:] = [neuron_id + pad for neuron_id in spike_ids]
 
     plotter.plot(spike_times, spike_ids, marker, markersize=markersize, 
-                 markerfacecolor=color, markeredgecolor=markeredgecolor, 
-                 markeredgewidth=markeredgewidth)
+        markerfacecolor=color, markeredgecolor=markeredgecolor, 
+        markeredgewidth=markeredgewidth)
 
     plotter.margins(0.1, 0.1)
 
-    return pad + max_id + 1
+    return min_t, max_t
 
 
 

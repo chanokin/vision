@@ -48,22 +48,25 @@ class LGN():
         return self.retina._right_key(key)
         
     def pop_size(self, key):
-        return self.shapes[self._right_key(key)]['size']
+        return self.retina.pop_size(key)
     
     def pop_width(self, key):
-        return self.shapes[self._right_key(key)]['width']
+        return self.retina.pop_width(key)
     
     def pop_height(self, key):
-        return self.shapes[self._right_key(key)]['height']
+        return self.retina.pop_height(key)
 
     def sample_step(self, key):
-        return self.shapes[self._right_key(key)]['step']
+        return self.retina.sample_step(key)
     
     def sample_start(self, key):
-        return self.shapes[self._right_key(key)]['start']
+        return self.retina.sample_start(key)
+
+    def get_output_keys(self):
+        return self.retina.get_output_keys()
 
     def output_keys(self):
-        return self.pops[self.channels[0]].keys()
+        return self.get_output_keys()
         
     def build_kernels(self):
         cfg  = self.cfg
@@ -76,7 +79,7 @@ class LGN():
             print(cs)
 
         for k in cs:
-            cs[k] /= np.sum(cs[k])
+            cs[k] /= np.sum(cs[k]**2)
             cs[k] *= (cfg['w2s'] if k == EXC else cfg['inh_w2s'])
             cs[k] *= (cs[k] > 0)
 
@@ -152,12 +155,12 @@ class LGN():
                 popsize = self.pop_size(k)
 
                 pops[c][k] = {}
-                pops[c][k]['inter']    = sim.Population(popsize,
-                                               inh_cell, inh_parm,
-                                               label='LGN inter %s %s'%(c, k))
+                pops[c][k]['inter'] = sim.Population(popsize,
+                                        inh_cell, inh_parm,
+                                        label='LGN inter %s %s'%(c, k))
                 pops[c][k]['relay'] = sim.Population(popsize,
-                                               exc_cell, exc_parm,
-                                               label='LGN output %s %s'%(c, k))
+                                        exc_cell, exc_parm,
+                                        label='LGN output %s %s'%(c, k))
 
                 if cfg['record']['voltages']:
                     pops[c][k]['inter'].record_v()
@@ -182,11 +185,11 @@ class LGN():
                 
                 projs[c][k] = {}
                 if is_spinnaker(self.sim):
-                    o2o = sim.OneToOneConnector(weights=cfg['w2s'],
+                    o2o = sim.OneToOneConnector(weights=cfg['inh_w2s'],
                                                 delays=cfg['kernel_inh_delay'],
                                                 generate_on_machine=True)
                 else:
-                    o2o = sim.OneToOneConnector(weights=cfg['w2s'],
+                    o2o = sim.OneToOneConnector(weights=cfg['inh_w2s'],
                                                 delays=cfg['kernel_inh_delay'])
 
                 # print("src size: %d"%self.retina.pops['off'][k]['ganglion'].size)

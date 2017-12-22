@@ -304,8 +304,8 @@ class Retina():
                     plot_kernel(-corr[cs0][cs1], "corr_%s_to_%s"%(cs0, cs1))
                     plot_kernel(krns[cs0] - corr[cs0][cs1], "cs_%s_to_%s"%(cs0, cs1))
                 
-                corr[cs0][cs1][cfg[cs0]['width']//2, \
-                               cfg[cs0]['width']//2] = 0
+                # corr[cs0][cs1][cfg[cs0]['width']//2, \
+                               # cfg[cs0]['width']//2] = 0
                 
                 corr[cs0][cs1] = cap_vals(corr[cs0][cs1], cfg['min_weight'])
 
@@ -553,7 +553,7 @@ class Retina():
         self.extra_conns['ganglion'] = {}
         for k in css:
 
-            #correlation between two of the smallest (3x3) centre-surround
+            #correlation between two  centre-surround
             krn = self.corr[k][k]
             # print("---------------------------------------------------------")
             # print(krn)

@@ -9,7 +9,7 @@ exc_cell_params = { 'cm': 0.25,  # nF
                   'tau_refrac': 3.0,
                   'tau_syn_E': 1., #2
                   'tau_syn_I': 2., #4
-                  'v_reset': -80.0,
+                  'v_reset': -70.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
@@ -59,7 +59,7 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 # dir_w2s = 1.
 # ssamp_w2s = 4.376069
 g_w2s = 4.8#78681
-inh_w2s = 5.#78681
+inh_w2s = 4.8#78681
 
 frame_rate = 90
 pix_dist = 0.25
@@ -153,9 +153,7 @@ defaults_retina = {
 defaults_lgn = {
                  'kernel_exc_delay': 3.,
                  'kernel_inh_delay': 1.,
-                 #default for training mnist!!!
-#                 'cs': {'std_dev': 0.43, 'width': 3, 'wmult': 1.} ,
-                 'cs': {'std_dev': 0.37, 'width': 3, 'wmult': 1.} ,
+                 'cs': {'std_dev': 0.43, 'width': 3, 'wmult': 1.1} ,
                  'w2s': g_w2s*1.0,
                  'inh_w2s': inh_w2s,
                  'inh_cell': {'cell': inh_cell,
@@ -180,6 +178,7 @@ defaults_lgn = {
 # unit_type = 'liquid_state'
 unit_type = 'four-tp-one'
 unit_type = 'simple'
+# unit_type = 'dopamine'
 
 
 #from A Statistical Analysis of Information-Processing Properties of 
@@ -241,7 +240,7 @@ column_conn_prob = {'l0': {'exc2inh': 0.10, 'inh2exc': 0.10,
 #                    'extra': {'l2e': 0.20,}
 #                   }
 
-input_conn_prob = {'main':  {'l0e': 1.00},
+input_conn_prob = {'main':  {'l0e': 0.80},
                   }
 
 # neurons_in_column = {'l2': 40,
@@ -259,8 +258,8 @@ v1_exc_cell_params = { 'cm': 0.25,  # nF
                   'v_thresh': -55.4
                   }
 
-neurons_in_column = {'l0': 50}
-max_w_mult = 0.5
+neurons_in_column = {'l0': 24}
+max_w_mult = 0.02
 defaults_v1 = { 'unit_type': unit_type,
                 'w2s': g_w2s,
                 'pop_ratio': pop_ratio,
@@ -271,7 +270,7 @@ defaults_v1 = { 'unit_type': unit_type,
                 'inter_unit_connect': False,
                 'inter_conn_prob': 0.2,#input_conn_prob['extra']['l2e'],
                 'inter_conn_weight': g_w2s*0.5,
-                'inter_conn_width': 3,
+                'inter_conn_width': 7,
                 'inter_conn_delay': 1.,
                 'input_delay': 1,
                 'context_in_weight': 0.3,
@@ -295,11 +294,15 @@ defaults_v1 = { 'unit_type': unit_type,
                 'lat_inh': False,
                 'stdp': {'tau_plus': 20,
                          'tau_minus': 24,
+                         'tau_c': 500,
+                         'tau_d': 100,
                          'w_max': g_w2s*max_w_mult,
                          'w_min': 0.,
                          'a_plus': 0.01,
                          'a_minus': 0.012,
                         },
+                'w_dopamine': 0.01,
+                'dop_prob': 0.05,
                 'in_receptive_width': 7, # width
                 'in_receptive_step':  3, # step
                 'in_receptive_start': 3, # start
