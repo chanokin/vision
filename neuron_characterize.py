@@ -3,7 +3,7 @@ import pylab as plt
 import time
 import sys
 import pickle
-from vision.default_config import exc_cell_params as exc_params,\
+from vision.mnist_config import exc_cell_params as exc_params,\
                                   inh_cell_params as inh_params
 import spynnaker7.pyNN as sim
 # from pyNN import nest as sim
@@ -30,8 +30,8 @@ izk_neurons   = True if 1 else False
 num_neurons = 1
 num_exc = 1
 
-# w2s   = 4.376069 # for 10 ms tau_m
-w2s   = 1.78681 # for 20 ms tau_m
+w2s   = 4.376069 # for 10 ms tau_m, 1ms tau_syn_E
+# w2s   = 1.78681 # for 20 ms tau_m, 1ms tau_syn_E
 w_max = w2s*1.
 
 

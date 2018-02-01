@@ -200,7 +200,7 @@ def list_wta_interneuron(pop, inter, ff_weight=2., fb_weight=-2., delay=1.):
 
 def list_probability_connector(src_list, dst_list, prob, weight, delay, 
                                std_dev=1., weight_std_dev=None, max_delay=None, 
-                               seed=None):
+                               seed=None, no_self_conn=False):
     num_src = len(src_list)
     num_dst = len(dst_list)
     dst_arr = np.array(dst_list)
@@ -210,25 +210,32 @@ def list_probability_connector(src_list, dst_list, prob, weight, delay,
         np.random.seed(seed)
         dice_roll = np.random.random(size=num_dst)
         post = dst_arr[ np.where(dice_roll <= prob) ]
-        if num_src == num_dst: #no self-connections
+        if num_src == num_dst and no_self_conn: #no self-connections
             post = np.array([post[i] for i in range(post.size) if src != post[i]])
         num_conns = post.size
 
         if isinstance(weight, list) or isinstance(weight, np.ndarray):
-            weights = np.ones_like(post)*weight[src_i]
+            np.random.seed()
+            if weight_std_dev is None:
+                weight_std_dev = 0.5
+            dw = np.random.normal(0, weight_std_dev, size=post.shape)
+            weights = np.abs(np.ones_like(post)*weight[src_i] + dw)
+
         elif weight_std_dev is None:
             weights = np.ones_like(post)*weight
         else:
             np.random.seed(seed)
             weights = np.random.normal(loc=weight, scale=weight_std_dev,
                                        size=num_conns)
+        weights[:] = np.abs(weights)
         if max_delay is None:
             delays = np.ones_like(post)*delay
         else:
             np.random.seed(seed)
             delays = np.random.randint(delay, max_delay, size=num_conns)
 
-        conns += [(src, post[i], weights[i], delays[i]) for i in range(num_conns)]
+        conns += [(int(src), int(post[i]), weights[i], delays[i])
+                                            for i in range(num_conns)]
         
     return conns
 

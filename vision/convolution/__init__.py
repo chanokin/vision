@@ -1,0 +1,5 @@
+from model_binaries import __file__ as binaries_path
+from python_models.convolution_population import ConvolutionPopulation
+import os
+from spynnaker.pyNN.abstract_spinnaker_common import AbstractSpiNNakerCommon
+AbstractSpiNNakerCommon.register_binary_search_path(os.path.dirname(binaries_path))

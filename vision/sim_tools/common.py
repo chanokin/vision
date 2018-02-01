@@ -85,13 +85,27 @@ def load_compressed(name):
         return obj
 
 def key_is_true(key, dictionary):
-    return ((key in dictionary) and (dictionary[key] == True))
+    in_dict = key in dictionary.keys()
+    if not in_dict:
+        return False
+    else:
+        return dictionary[key] == True
 
 def key_is_false(key, dictionary):
-    return ((key in dictionary) and (dictionary[key] == False))
+    in_dict = key in dictionary.keys()
+    if not in_dict:
+        return True
+    else:
+        return dictionary[key] == False
 
-def file_len(fname):
-    with open(fname) as f:
-        for i, l in enumerate(f):
-            pass
+def file_len(fname, compressed=False):
+    if not compressed:
+        with open(fname) as f:
+            for i, l in enumerate(f):
+                pass
+    else:
+        with bz2.BZ2File(fname, 'rb') as f:
+            for i, l in enumerate(f):
+                pass
+
     return i + 1

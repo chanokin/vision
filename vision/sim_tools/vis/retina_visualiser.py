@@ -31,8 +31,9 @@ class RetinaVisualiser(object):
                 self.sockets[ch][k].setblocking(False)
 
         # Create image plot to display game screen
-        self.fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        axlist = [ax1, ax2, ax3, ax4]
+        self.fig = plt.figure("Retina outputs")
+
+        axlist = [plt.subplot(2, 2, i+1) for i in range(len(keys))]
 
         self.axes = {keys[i]: axlist[i] for i in range(len(keys))}
 
@@ -40,11 +41,15 @@ class RetinaVisualiser(object):
         for k in keys:
             self.data[k] = np.zeros((cfg[k]['height'], cfg[k]['width'], 3))
 
-        self.images = [self.axes[k].imshow(
+        self.images = (self.axes[k].imshow(
                                 self.data[k], interpolation="nearest")
-                                                            for k in keys]
+                                                            for k in keys)
 
-        for k in keys:
+        self.keys = keys
+        self.channels = channels
+
+    def init(self):
+        for i, k in enumerate(self.keys):
             self.axes[k].set_title("pop %s"%k)
 
             # Hide grid
@@ -52,9 +57,8 @@ class RetinaVisualiser(object):
             self.axes[k].set_xticklabels([])
             self.axes[k].set_yticklabels([])
             self.axes[k].axes.get_xaxis().set_visible(False)
-
-        self.keys = keys
-        self.channels = channels
+            self.data[k][:] = 0
+            self.images[i].set_array(self.data[k])
 
     # ------------------------------------------------------------------------
     # Public methods
@@ -62,7 +66,8 @@ class RetinaVisualiser(object):
     def show(self):
         # Play animation
         self.animation = animation.FuncAnimation(self.fig, self._update,
-                                                 interval=20.0, blit=False)
+                                                 init_func=self.init,
+                                                 interval=20.0, blit=True)
         # Show animated plot (blocking)
         try:
             plt.show()

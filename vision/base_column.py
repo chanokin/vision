@@ -4,16 +4,22 @@ from sim_tools.connectors import kernel_connectors as conn_krn, \
 from default_config import defaults_v1 as defaults
 from lgn import LGN
 import abc
-
+import os
 
 class BaseColumn(object):
     __metaclass__ = abc.ABCMeta
     
-    def __init__(self, in_level, width, height, location, learning_on, cfg):
+    def __init__(self, in_level, width, height, location, learning_on, cfg,
+                 input_conns=None):
 
         for k in defaults.keys():
             if k not in cfg.keys():
                 cfg[k] = defaults[k]
+
+        self._weight_dir = cfg['weight_dir']
+
+        if not os.path.isdir(self._weight_dir):
+            os.makedirs(os.path.join(os.getcwd(), self._weight_dir))
 
         self.cfg = cfg
         self._v1_width  = width
@@ -40,13 +46,16 @@ class BaseColumn(object):
 
         self.in_indices = None
         self.in_weights = None
-        self.min_weight = 0.0001
+        self.min_weight = cfg['min_weight']
+        self.inter_conns = {}
         self.inter_projs = {}
+
         
         if isinstance(in_level, LGN):
             self.lgn    = in_level
             self.retina = in_level.retina
-            self.build_input_indices_weights_lgn()
+            if input_conns is None:
+                self.build_input_indices_weights_lgn()
 
     def __str__(self):
         return "unit row %d, col %d"%(self.location[ROW], self.location[COL])
@@ -54,22 +63,17 @@ class BaseColumn(object):
     def get_map_params(self, k):
         step, start, width, height, krn_width = 0, 0, 0, 0, 0
         if self.lgn is not None:
-            width  = self.lgn.pop_width(k)
+            width = self.lgn.pop_width(k)
             height = self.lgn.pop_height(k)
-            step   = self.lgn.sample_step(k)
-            start  = self.lgn.sample_start(k)
+            step = self.lgn.sample_step(k)
+            start = self.lgn.sample_start(k)
 
-            if k == 'cs4':
-                kk = 'cs_quart'
-            elif k == 'cs2':
-                kk = 'cs_half'
+            if 'dir' in k:
+                krn_width = self.retina.cfg['direction']['width']
+            elif 'orient' in k:
+                krn_width = self.retina.cfg['orientation']['width']
             else:
-                kk = k
-            
-            if 'dir' not in kk:
-                krn_width = self.retina.cfg[kk]['width']        
-            else:
-                krn_width = 0
+                krn_width = self.retina.cfg[k]['width']
 
         return step, start, width, height, krn_width
 
@@ -84,12 +88,12 @@ class BaseColumn(object):
         
         return {ROW:fr_r, COL:fr_c}, {ROW:to_r, COL:to_c}
 
+
     def build_input_indices_weights(self):
         if self.lgn is not None:
             return self.build_input_indices_weights_lgn
 
-            
-            
+
     def build_input_indices_weights_lgn(self):
         cfg = self.cfg
         indices = {k: [] for k in self.lgn.output_keys()}
@@ -106,21 +110,25 @@ class BaseColumn(object):
             # print("----------- KEY %s ---------------"%k)
             step, start, width, height, krn_width = self.get_map_params(k)
             half_krn_w = max(krn_width//2, half_rec_w)
-            frm, to = self.get_row_col_limits(half_krn_w)
+            # print(krn_width//2, half_rec_w, half_krn_w)
+            frm.clear()
+            to.clear()
             sanity.clear()
-            
+
+            frm, to = self.get_row_col_limits(half_krn_w)
+
             for r in range(frm[ROW], to[ROW]): #r in full resolution space
-                ssmp_r = subsamp_size(start, r, step)
-                if ssmp_r >= height: ### too large for lgn dimension
+                ssmp_r = subsamp_size(start, r, step) # to sub-sampled space
+                if 0 >= ssmp_r >= height: ### too large for lgn dimension
                     continue
                     
                 if ssmp_r not in sanity:
                     sanity[ssmp_r] = []
                     
                 for c in range(frm[COL], to[COL]): #c in full resolution space
-                    ssmp_c = subsamp_size(start, c, step)
+                    ssmp_c = subsamp_size(start, c, step) # to sub-sampled space
 
-                    if ssmp_c >= width: ### too large for lgn dimension
+                    if 0 >= ssmp_c >= width: ### too large for lgn dimension
                         continue
 
                     if ssmp_c in sanity[ssmp_r]:
@@ -130,10 +138,11 @@ class BaseColumn(object):
 
                     d = np.sqrt( (my_r - r)**2 + (my_c - c)**2 )#in full resolution
                     w = self.in_weight_func(d)
-
                     if w < cfg['min_scale_weight']:
                         continue
-                    
+                    if src < 0:
+                        continue
+
                     # print_debug(("%d*%d + %d = %d"%(ssmp_r, width, ssmp_c, src), w))
                     sanity[ssmp_r].append(ssmp_c)                        
                     indices[k].append( src )
@@ -151,8 +160,8 @@ class BaseColumn(object):
         self.in_weights = {k: np.array(weights[k]) for k in weights}
 
 
-    def get_synapse_dynamics(self):
-        if not self.learn_on:
+    def get_synapse_dynamics(self, src, dst):
+        if not self.learn_on or src == 'inh' or dst == 'inh':
             return None
             
         cfg = self.cfg['stdp']
@@ -171,26 +180,27 @@ class BaseColumn(object):
         return syn_dyn
 
 
-    @staticmethod
-    def get_fixed_prob_proj(src_pop, dst_pop, prob, min_weight=0., max_weight=2.):
-        lbl = "%s to %s"%(src_pop, dst_pop)
-        rng = sim.NumpyRNG(seed=None)
-        w_dist = sim.RandomDistribution('uniform', [min_weight, max_weight],
-                                        rng=rng)
-        conn = sim.FixedProbabilityConnector(cfg['inter_conn_prob'], 
-                                             weights=w_dist)
-        syn_dyn = self.get_synapse_dynamics()
-        return sim.Projection(src_pop, dst_pop, conn, label=lbl,
-                              synapse_dynamics=syn_dyn)
+    # def get_fixed_prob_proj(self, src_pop, dst_pop, prob, min_weight=0., max_weight=2.):
+    #     sim = self.sim
+    #     cfg = self.cfg
+    #     lbl = "%s to %s"%(src_pop, dst_pop)
+    #     rng = sim.NumpyRNG(seed=None)
+    #     w_dist = sim.RandomDistribution('uniform', [min_weight, max_weight],
+    #                                     rng=rng)
+    #     conn = sim.FixedProbabilityConnector(prob, weights=w_dist)
+    #     syn_dyn = self.get_synapse_dynamics()
+    #     return sim.Projection(src_pop, dst_pop, conn, label=lbl,
+    #                           synapse_dynamics=syn_dyn)
 
     
     @staticmethod
     def conn_list_to_array(conns, pre_size, post_size):
         ws = np.nan*np.ones((pre_size, post_size))
         
-        for c in conns:
+        for c in conns._conn_list:
             # print_debug(c)
-            ws[c[0], c[1]] = c[2]
+            if c[0] < pre_size and c[1] < post_size:
+                ws[c[0], c[1]] = c[2]
 
         return ws
 

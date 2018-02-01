@@ -5,7 +5,9 @@ import re
 from vision.spike_tools.vis import my_imshow, plot_spikes, \
                                    plot_output_spikes, \
                                    imgs_in_T_from_spike_array, \
-                                   images_to_video
+                                   images_to_video, \
+                                   plot_in_out_spikes, \
+                                   plot_image_set
 
 # from vision.sim_tools.vis import plot_connector_3d
 # import vision.sim_tools.kernels.center_surround as csgen
@@ -17,9 +19,11 @@ from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 from vision.retina import Retina, dvs_modes, MERGED
 from vision.lgn import LGN
+from vision.v1 import V1
 
 from vision.spike_tools.pattern import pattern_generator as pat_gen
-
+from vision.mnist_config import exc_cell_params as params, \
+                                g_w2s as W2S
 import os
 import sys
 
@@ -35,9 +39,9 @@ def row_major_map(nrn_id, img_width, img_height):
 
 def cam_img_map(nrn_id, img_width, img_height):
     cols_bits = np.uint32(np.ceil(np.log2(img_width)))
-    cols_mask = int(2**cols_bits - 1)
+    cols_mask = np.uint32((1<<cols_bits) - 1)
     rows_bits = np.uint32(np.ceil(np.log2(img_height)))
-    rows_mask = int(2**rows_bits - 1)
+    rows_mask = np.uint32((1<<rows_bits) - 1)
 
     col = (nrn_id >> (rows_bits + 1)) & cols_mask
     row = (nrn_id >> 1) & rows_mask
@@ -46,21 +50,13 @@ def cam_img_map(nrn_id, img_width, img_height):
     return row, col, up_dn
 
 
-def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
+def setup_cam_pop(sim, spike_array, img_w, img_h, ch_bits=1, event_bits=0,
+                    w2s=W2S):
     row_bits = int(np.ceil(np.log2(img_h)))
     col_bits = int(np.ceil(np.log2(img_w)))
-    pop_size = (1 << (row_bits + col_bits + 1))
+    pop_size = (1 << (row_bits + col_bits + ch_bits + event_bits))
     cell = sim.IF_curr_exp
-    params = {  'cm': 0.35,  # nF
-                'i_offset': 0.0,
-                'tau_m': 10.0,
-                'tau_refrac': 2.0,
-                'tau_syn_E': 1.,
-                'tau_syn_I': 1.,
-                'v_reset': -70.0,
-                'v_rest': -65.0,
-                'v_thresh': -55.4
-            }
+
     dmy_pops = []
     dmy_prjs = []
     if is_spinnaker(sim):
@@ -79,7 +75,8 @@ def setup_cam_pop(sim, spike_array, img_w, img_h, w2s=4.376069):
             conn = [(0, i, w2s, 1)]
             dmy_prjs.append(sim.Projection(dmy_pops[i], cam_pop,
                                         sim.FromListConnector(conn),
-                                        target='excitatory'))
+                                        target='excitatory',
+                                        label='dmy to cam %d'%i))
 
     return cam_pop, dmy_pops, dmy_prjs
 
@@ -107,7 +104,7 @@ def plot_out_spikes(on_spikes, off_spikes, img_w, img_h,
         my_imshow(ax, img, cmap=None)
     # plot_spikes(spikes)
     plt.suptitle(title)
-    plt.savefig("%s.png"%(title), dpi=150)
+    plt.savefig("%s.pdf"%(title), dpi=150)
     # plt.show()
 
 def get_spikes(pop, key):

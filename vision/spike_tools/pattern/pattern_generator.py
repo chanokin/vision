@@ -9,6 +9,8 @@ from numpy import float64
 from numpy import random
 import pickle
 import glob
+import bz2
+import io
 from vision.sim_tools.common import *
 
 LESS_THAN     = "less than"
@@ -424,7 +426,7 @@ def label_spikes_from_to(labels, num_classes,
 def img_spikes_from_to(path, num_neurons, 
                        start_file_idx, end_file_idx, 
                        on_time_ms, off_time_ms, 
-                       start_time, delete_before=0, ext='txt',
+                       start_time, delete_before=0, ext='txt.bz2',
                        noise=True, noise_prob=0.):
     start = start_file_idx
     end   = end_file_idx
@@ -439,27 +441,30 @@ def img_spikes_from_to(path, num_neurons,
     if len(spk_files) == 0:
         raise Exception("Unable to locate files in dir:\n\t\t%s"%path)
 
-    import sys
-    import io
+
     t = float(start_time)
+    max_t = start_time
     for fname in spk_files[start:end]:
+        
         # print(fname)
         # spks[:] = [ [] for i in range(num_neurons) ]
-        n_lines = file_len(fname)
+        n_lines = file_len(fname, compressed=True)
         
         # f = open(fname, 'r')
-        f = io.open(fname, 'r', buffering=1)
+
+        f = bz2.BZ2File(fname, 'rb')
         line_n = 2
+        np.random.seed()        
+        
         for line in f:
-            sys.stdout.write("\r%03.2f%%"%(100.*float(line_n)/n_lines))
-            sys.stdout.flush()
+            vals = line.split(' ')
+            nrn_id, spk_time = np.uint32(float(vals[0])), int( float(vals[1]) )
+
+
             line_n += 1
 
-            np.random.seed()
-            rand_dt = np.random.randint(-1, 2) #[-2, -1, 0, 1, 2] or [..., 3)
+            rand_dt = np.random.randint(-2, 3) #[-2, -1, 0, 1, 2] or [..., 3)
 
-            vals = line.split(' ')
-            nrn_id, spk_time = np.uint32(vals[0]), int( float(vals[1]) )
             # print("id = %s, t = %s"%(vals[0], vals[1]))
             if nrn_id > num_neurons:
                 raise Exception("Neuron Id from file is greater than number of "
@@ -474,27 +479,41 @@ def img_spikes_from_to(path, num_neurons,
 
             rspk_time = spk_time + rand_dt
 
+            if rspk_time <= delete_before:
+                continue
+            
+            
+
+            rspk_time += t
+            rspk_time -= delete_before
+            
             if rspk_time < 0:
                 continue
+            
+            sys.stdout.write(
+                "\r%05.2f%%\tbase t %06d\tneuron %06d\ttime %06d\tmax t %06d" % 
+                (100.*float(line_n)/n_lines, t, nrn_id, rspk_time, on_time_ms))
+            sys.stdout.flush()
 
-            if rspk_time >= on_time_ms:
-                continue
-
-            if rspk_time < delete_before:
-                continue
+            if rspk_time > on_time_ms:
+                break
 
             if rspk_time in spks[nrn_id]:
                 continue
 
-            rspk_time -= delete_before
-            rspk_time += t
             spks[nrn_id].append(rspk_time)
+            
+            if rspk_time > max_t:
+                max_t = rspk_time
 
         f.close()
         # print(fname, t)
         # t += on_time_ms + off_time_ms
+        t = max_t
         t += off_time_ms
         # spikes.append(spks)
+        sys.stdout.write("\n")
+        sys.stdout.flush()
         
     for nrn_id in range(num_neurons):
         nspk = len(spks[nrn_id])
