@@ -8,12 +8,21 @@ exc_cell_params = { 'cm': 0.25,  # nF
                   'tau_m': 10.0,
                   'tau_refrac': 3.0,
                   'tau_syn_E': 1., #2
-                  'tau_syn_I': 2., #4
+                  'tau_syn_I': 1., #4
                   'v_reset': -80.0,
                   'v_rest': -65.0,
                   'v_thresh': -55.4
                   }
-
+exc_big_cell_params = { 'cm': 0.25,  # nF
+                        'i_offset': 0.0,
+                        'tau_m': 10.0,
+                        'tau_refrac': 3.0,
+                        'tau_syn_E': 2., #2
+                        'tau_syn_I': 1., #4
+                        'v_reset': -80.0,
+                        'v_rest': -65.0,
+                        'v_thresh': -55.4
+                  }
 dir_cell_params = { 'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
@@ -71,7 +80,7 @@ defaults_retina = {
                 'channel_bits': 1,
                 'event_bits': 0,
                 # 'kernel_width': 3,
-                'kernel_exc_delay': 3.,
+                'kernel_exc_delay': 4.,
                 'kernel_inh_delay': 1.,
                 'corr_self_delay': 4.,
                 'corr_w2s_mult': 1.2,
@@ -80,17 +89,18 @@ defaults_retina = {
                 'start_row': 0, 'start_col': 0,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
-                'cs': {'std_dev': 0.57, 'sd_mult': 6.7, 'width': 3,
+                'cs': {'std_dev': 0.57, 'sd_mult': 1., 'width': 3,
                        'step': 1, 'start':1, 'w2s_mult': 1.,
                        'params': exc_cell_params},
-                # 'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
-                        # 'step': 2, 'start': 3, 'w2s_mult': 1.,
-                        # 'params': exc_cell_params},
-                # 'cs3': {'std_dev': 1.353551, 'sd_mult': 6.18, 'width': 15,
-                        # 'step': 4, 'start': 7, 'w2s_mult': 1.,
-                        # 'params': exc_cell_params},
-                # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
-                #         'step': 10, 'start': 15, 'w2s_mult': 1.},
+                'cs2': {'std_dev': 1., 'sd_mult': 1., 'width': 7,
+                        'step': 3, 'start': 3, 'w2s_mult': 1.,
+                        'params': exc_cell_params},
+                'cs3': {'std_dev': 3.6, 'sd_mult': 1., 'width': 31,
+                        'step': 15, 'start': 15, 'w2s_mult': 1.,
+                        'params': exc_big_cell_params},
+                'cs4': {'std_dev': 6.7, 'sd_mult': 1., 'width': 63,
+                        'step': 30, 'start': 30, 'w2s_mult': 1.,
+                        'params': exc_big_cell_params},
                 'w2s': g_w2s, 
                 'inhw': inh_w2s,
                 'inh_cell': {'cell': inh_cell,

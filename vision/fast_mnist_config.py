@@ -96,7 +96,7 @@ defaults_retina = {
                         'step': 4, 'start': 3, 'w2s_mult': 1.,
                         'params': exc_cell_params},
                 'cs3': {'std_dev': 1.653551, 'sd_mult': 6.18, 'width': 15,
-                        'step': 8, 'start': 7, 'w2s_mult': 2.,
+                        'step': 6, 'start': 7, 'w2s_mult': 2.,
                         'params': exc_big_cell_params},
                 # 'cs4': {'std_dev': 3.809901, 'sd_mult': 5.57, 'width': 31,
                 #         'step': 10, 'start': 15, 'w2s_mult': 1.},
