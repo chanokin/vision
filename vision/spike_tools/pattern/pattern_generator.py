@@ -423,97 +423,112 @@ def label_spikes_from_to(labels, num_classes,
     return spks
 
 
-def img_spikes_from_to(path, num_neurons, 
-                       start_file_idx, end_file_idx, 
-                       on_time_ms, off_time_ms, 
-                       start_time, delete_before=0, ext='txt.bz2',
-                       noise=True, noise_prob=0.):
+def img_spikes_from_to(path, num_neurons,
+                       start_file_idx, end_file_idx,
+                       on_time_ms, off_time_ms=0,
+                       start_time=0, delete_before=0, ext='txt.bz2',
+                       noise=True, noise_prob=0., rand_times=True):
     start = start_file_idx
-    end   = end_file_idx
+    end = end_file_idx
     spikes = []
 
-    spk_files = glob.glob(os.path.join(path, "*.%s"%(ext)))
+    spk_files = glob.glob(os.path.join(path, "*.%s" % (ext)))
     spk_files.sort()
     # print(path)
     # print(len(spk_files))
     f = None
-    spks = [ [] for i in range(num_neurons) ]
+    spks = [[] for i in range(num_neurons)]
     if len(spk_files) == 0:
-        raise Exception("Unable to locate files in dir:\n\t\t%s"%path)
-
+        raise Exception("Unable to locate files in dir:\n\t\t%s" % path)
 
     t = float(start_time)
-
+    max_t = start_time
     for fname in spk_files[start:end]:
+
         # print(fname)
         # spks[:] = [ [] for i in range(num_neurons) ]
         n_lines = file_len(fname, compressed=True)
-        
+
         # f = open(fname, 'r')
 
         f = bz2.BZ2File(fname, 'rb')
         line_n = 2
+        np.random.seed()
+
         for line in f:
-            sys.stdout.write("\r%03.2f%%"%(100.*float(line_n)/n_lines))
-            sys.stdout.flush()
+            vals = line.split(' ')
+            nrn_id, spk_time = np.uint32(float(vals[0])), int(float(vals[1]))
+
             line_n += 1
 
-            np.random.seed()
-            rand_dt = np.random.randint(-1, 2) #[-2, -1, 0, 1, 2] or [..., 3)
+            if rand_times:
+                rand_dt = np.random.randint(-2, 3)  # [-2, -1, 0, 1, 2] or [..., 3)
+            else:
+                rand_dt = 0
 
-            vals = line.split(' ')
-            nrn_id, spk_time = np.uint32(vals[0]), int( float(vals[1]) )
             # print("id = %s, t = %s"%(vals[0], vals[1]))
             if nrn_id > num_neurons:
                 raise Exception("Neuron Id from file is greater than number of "
-                                "neurons given in the argument (%d > %d)"%
-                                (nrn_id, num_neurons) )
+                                "neurons given in the argument (%d > %d)" %
+                                (nrn_id, num_neurons))
 
             if noise:
                 np.random.seed()
                 dice_roll = np.random.uniform(0., 1.)
-                if dice_roll <= noise_prob:
+                if dice_roll < noise_prob:
                     continue
 
             rspk_time = spk_time + rand_dt
 
+            if rspk_time <= delete_before:
+                continue
+
+            rspk_time += t
+            rspk_time -= delete_before
+
             if rspk_time < 0:
                 continue
 
-            if rspk_time >= on_time_ms:
-                continue
+            sys.stdout.write(
+                "\r%05.2f%%\tbase t %06d\tneuron %06d\ttime %06d\tmax t %06d" %
+                (100. * float(line_n) / n_lines, t, nrn_id, rspk_time, on_time_ms))
+            sys.stdout.flush()
 
-            if rspk_time < delete_before:
-                continue
+            if rspk_time > on_time_ms:
+                break
 
             if rspk_time in spks[nrn_id]:
                 continue
 
-            rspk_time -= delete_before
-            rspk_time += t
             spks[nrn_id].append(rspk_time)
+
+            if rspk_time > max_t:
+                max_t = rspk_time
 
         f.close()
         # print(fname, t)
         # t += on_time_ms + off_time_ms
+        t = max_t
         t += off_time_ms
         # spikes.append(spks)
-        
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
     for nrn_id in range(num_neurons):
         nspk = len(spks[nrn_id])
 
         if nspk == 0:
             continue
 
-        spks[nrn_id][:] = list(set(spks[nrn_id])) # remove duplicates
-        
+        spks[nrn_id][:] = list(set(spks[nrn_id]))  # remove duplicates
+
         # random noise (spike loss)
         # np.random.seed(np.uint32(time.time()*(10**10)))
         # to_remove = np.random.choice(np.arange(nspk), size=int(nspk*0.1),
-                                     # replace=False) 
+        # replace=False)
         # for i in sorted(to_remove, reverse=True):
-            # del spks[nrn_id][i]
-            
+        # del spks[nrn_id][i]
+
         spks[nrn_id].sort()
 
     print()

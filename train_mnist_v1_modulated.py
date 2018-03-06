@@ -1,4 +1,4 @@
-from common import *
+from vision_common import *
 from vision.mnist_config import defaults_retina
 import cv2
 import time

@@ -1,4 +1,4 @@
-from common import *
+from vision_common import *
 import os
 from vision.mnist_config import defaults_retina, defaults_lgn
 import cv2
@@ -10,10 +10,6 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
     sim.setup(timestep=1., max_delay=140., min_delay=1.)
 
     sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
-    # sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 100)
-    # sim.set_number_of_neurons_per_core(sim.IF_curr_exp, 50)
-    # sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 1000)
-    # sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 500)
     sim.set_number_of_neurons_per_core(sim.SpikeSourceArray, 100)
 
     cam, dmy_ssa_cam, dmy_prj_cam = setup_cam_pop(sim, spikes, 
@@ -26,7 +22,6 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
                            'spikes': True,
                         }
     ret_cfg['gabor'] =  False
-#    ret_cfg['input_mapping_func'] =  mapf.row_col_to_input
     ret_cfg['row_bits'] =  rbits
     ret_cfg['lateral_competition'] =  competition_on
     ret_cfg['plot_kernels'] =  False
@@ -57,15 +52,9 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
     for ch in retina.pops.keys():
         out_spikes[ch] = {}
         out_spikes[ch]['cam'] = get_spikes(retina.cam[ch], 'cam__%s'%ch)
-        #map_w[ch] = retina._cam_map_projs[ch].getWeights(format='array')
         bip_w[ch] = {}
         for p in retina.pops[ch].keys():
             out_spikes[ch][p] = {}
-#            if 'bip2gang' in retina.projs[ch][p]:
-#                bip_w[ch][p] = [np.array(retina.projs[ch][p]['bip2gang'][0].
-#                                                getWeights(format='array')),
-#                               np.array(retina.projs[ch][p]['bip2gang'][1].
-#                                                getWeights(format='array'))]
 
             if isinstance(retina.pops[ch][p], dict):
                 for t in retina.pops[ch][p].keys():
@@ -73,35 +62,6 @@ def run_sim(sim, run_time, spikes, img_w, img_h, ch_bits=1, row_bits=8, w2s=4.37
                     print("\tGettings spikes for %s"%key)
                     out_spikes[ch][p][t] = get_spikes(retina.pops[ch][p][t],
                                                      key)
-
-#    for k in map_w.keys():
-#        f = open(os.path.join(os.getcwd(),"mapping_weights_%s_w.txt"%k), 'w+')
-#        weight_indices = np.where(~np.isnan(map_w[k]))
-#        for i in range(len(weight_indices[0])):
-#            f.write("%d (%d, %d) to %d (%d, %d) = %f\n"%
-#                    (weight_indices[0][i],
-#                     (weight_indices[0][i] >> 1) & ((1 << rbits) - 1),
-#                     (weight_indices[0][i] >> (rbits + 1) ),
-#                     weight_indices[1][i],
-#                     weight_indices[1][i]//img_w, weight_indices[1][i]%img_w,
-#                    map_w[k][weight_indices[0][i], weight_indices[1][i]]))
-#        f.close()
-
-#    for k in bip_w:
-#        for p in bip_w[k]:
-#            for i in range(len(bip_w[k][p])):
-#                f = open("weights_bip_to_gang_%s_%s_%d_w.txt"%(k, p, i), "w+")
-#                r = 0
-#                for row in bip_w[k][p][i]:
-#                    c = 0
-#                    for val in row:
-#                        if np.isnan(val):
-#                            c += 1
-#                            continue
-#                        f.write("%d to %d = %3.4f\n"%(r, c, val))
-#                        c += 1
-#                    r += 1
-#                f.close()
 
     lgn_spikes = {}
     for ch in lgn.pops.keys():
@@ -128,12 +88,6 @@ def delete_prev_run():
             os.remove(os.path.join(os.getcwd(), file))
 
 img_w, img_h = 32, 32
-# img_w, img_h = 50, 50
-# img_w, img_h = 64, 64
-# img_w, img_h = 90, 90
-# img_w, img_h = 96, 96
-# img_w, img_h = 100, 100
-# img_w, img_h = 128, 128
 
 col_bits = int(np.ceil(np.log2(img_w)))
 row_bits = int(np.ceil(np.log2(img_h)))
@@ -145,30 +99,10 @@ vid_fps = 60 # this will slow video down
 vid_scale = 20
 thresh_scale = 15
 cam_thresh_scale = 10
-frames = 200
-frames = 300
-frames = 500
 frames = 90
-# frames = 270
-# frames = 450
 
 thresh = int(255*0.05) # just for plotting
-# thresh = int(255*0.1)
 
-# mnist_dir = "../../pyDVS/mnist_spikes/" + \
-#             "mnist_behave_SACCADE_" + \
-#             "pol_MERGED_enc_TIME_" + \
-#             "thresh_12_hist_95_00_"+ \
-#             "inh_False___45_frames_" + \
-#             "at_90fps_%dx%d_res_spikes/" + \
-#             "t10k/"
-#
-mnist_dir = \
-    "../../pyDVS/mnist_spikes" \
-    "/mnist_behave_SACCADE_pol_MERGED" \
-    "_enc_TIME_thresh_12_hist_99_00_" \
-    "inh_False___90_frames_at_90fps_%dx%d_res_spikes/"\
-    "train/"
 
 mnist_dir = \
     "../../pyDVS/mnist_spikes" \
@@ -176,24 +110,8 @@ mnist_dir = \
     "_enc_TIME_thresh_12_hist_99_00_" \
     "inh_False___90_frames_at_90fps_%dx%d_res_spikes/"\
     "train/"
-
-# mnist_dir = \
-    # "../../pyDVS/mnist_spikes" \
-    # "/mnist_behave_TRAVERSE_pol_MERGED" \
-    # "_enc_TIME_thresh_12_hist_99_00_" \
-    # "inh_False___270_frames_at_90fps_%dx%d_res_spikes/"\
-    # "train/"
-    # 
-# mnist_dir = \
-    # "../../pyDVS/mnist_spikes" \
-    # "/mnist_behave_TRAVERSE_pol_MERGED" \
-    # "_enc_TIME_thresh_12_hist_99_00_" \
-    # "inh_False___450_frames_at_90fps_%dx%d_res_spikes/"\
-    # "train/"
 
 mnist_dir = mnist_dir%(img_w, img_h)
-
-# mnist_dir = "../../pyDVS/misc_spikes/%dx%d/"%(img_w, img_h)
 
 print("reading spikes from:")
 print(mnist_dir)
@@ -237,7 +155,6 @@ print("Plotting Camera ------------------------------------------------")
 cols = 10
 figw = 2.
 if plot_cam_spikes:
-    # print(spikes)
     imgsU = imgs_in_T_from_spike_array(spikes, img_w, img_h, 
                                        0, on_time_ms, ftime_ms,
                                        out_array=False,
@@ -247,17 +164,6 @@ if plot_cam_spikes:
     num_imgs = len(imgsU)
 
     rows = num_imgs//cols + (1 if num_imgs%cols else 0)
-    # fig = plt.figure(figsize=(figw*cols, figw*rows))
-    # plt.suptitle("each square is %d ms"%(ftime_ms))
-    # for i in range(num_imgs):
-    #     ax = plt.subplot(rows, cols, i+1)
-    #     my_imshow(ax, imgsU[i], cmap=None)
-    # # plot_spikes(spikes)
-
-    # plt.savefig("test_retina_camera.png", dpi=300)
-    # plt.close()
-    # plt.show()
-
     images_to_video(imgsU, fps=vid_fps, title='camera_spikes', scale=10)
 
 # ------------------------------------------------------------------ #
@@ -274,8 +180,7 @@ if simulate_retina:
 
     dump_compressed({'spikes': ret_spikes, 'shapes': pop_shapes},
                     'test_retina_spikes_and_shapes.pickle')
-    # print(ret_spikes['on'].keys())
-    # print(pop_shapes.keys())
+
     print("\nPlotting Retina's output spikes:\n")
     on_imgs    = []
     on_spikes  = []
@@ -283,7 +188,6 @@ if simulate_retina:
     off_spikes = []
     in_spikes  = []
     out_spikes = []
-    # for channel in ret_spikes.keys():
     for pop in ret_spikes[ret_spikes.keys()[0]]:
 #        if 'cam' in pop:
 #            continue

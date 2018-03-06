@@ -1,4 +1,4 @@
-from common import *
+from vision_common import *
 
 import cv2
 import time

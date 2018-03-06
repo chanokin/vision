@@ -1,4 +1,4 @@
-from common import *
+from vision_common import *
 
 def run_sim(sim, run_time, spikes, img_w, img_h, row_bits=8, w2s=4.376069, 
             competition_on=True):

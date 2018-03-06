@@ -39,7 +39,7 @@ exc2_cell_params = {'cm': 0.25,  # nF
                   'i_offset': 0.0,
                   'tau_m': 10.0,
                   'tau_refrac': 20.0, # one spike per frame :O
-                  'tau_syn_E': 1.,
+                  'tau_syn_E': 2.,
                   'tau_syn_I': 2.,
                   'v_reset': -100.0,
                   'v_rest': -65.0,
@@ -101,6 +101,7 @@ wta_inh_cell_params = {'cm': 0.3,  # nF
 # dir_w2s = 1.
 # ssamp_w2s = 4.376069
 g_w2s = 4.378681
+# g_w2s = 7.
 inh_w2s = 4.378681
 
 # g_w2s = 1.8
@@ -145,15 +146,15 @@ defaults_retina = {
                 'square_centre-surround': True,
                 # 'gabor': {'num_divs': 2., 'freq': 5., 'std_dev': 5., 'width': 7,
                             # 'step': 3, 'start': 0},
-                # 'cs': {'std_dev': 1., 'width': 5, 'step': 3, 'start': 1,
-                #        'w2s_mult': 1., 'params': exc_cell_params,
-                #        'flatten_threshold': 0.05,},
-                'cs': {'std_dev': 1.5, 'width': 11, 'step': 9, 'start': 5,
-                        'w2s_mult': 1., 'params': exc2_cell_params,
-                        'flatten_threshold': 0.001},
-                'cs3': {'std_dev': 2.5, 'width': 19, 'step': 17, 'start': 9,
-                        'w2s_mult': 1., 'params': exc_cell_params,
-                        'flatten_threshold': 0.0001},
+                'cs': {'std_dev': 1., 'width': 5, 'step': 3, 'start': 1,
+                       'w2s_mult': 2., 'params': exc_cell_params,
+                       'flatten_threshold': 0.05,},
+                # 'cs2': {'std_dev': 1.5, 'width': 11, 'step': 9, 'start': 5,
+                #         'w2s_mult': 1., 'params': exc2_cell_params,
+                #         'flatten_threshold': 0.001},
+                # 'cs3': {'std_dev': 2.5, 'width': 19, 'step': 17, 'start': 5,
+                #         'w2s_mult': 1., 'params': exc_cell_params,
+                #         'flatten_threshold': 0.0001},
 #                'cs2': {'std_dev': 0.865492, 'sd_mult': 6.63, 'width': 7,
 #                        'step': 4, 'start': 3, 'w2s_mult': 10.,
 #                        'params': exc_big_params},
@@ -221,11 +222,16 @@ defaults_retina = {
                                             #20ms = 1000/framerate
                             'weight_func': lambda d,a,w: w/(1.),
                             # 'weight_func': lambda d,a,w: w,
-                            'bipolars': {'width':  7, 'start': 4, 'step': 6},
-                            'ganglion': {'width': dir_width,
-                                         'start': dir_width//2,
-                                         'step': dir_width//2 + 1,
+                            # 'bipolars': {'width':  9, 'start': 4, 'step': 7},
+                            # 'ganglion': {'width': 9, 'start': 4, 'step': 7,
+                            #              'params': dir_g_cell_params},
+                            'bipolars': {'width': 9, 'start': 4, 'step': 4},
+                            'ganglion': {'width': 9, 'start': 4, 'step': 4,
                                          'params': dir_g_cell_params},
+
+                    # 'bipolars': {'width':  7, 'start': 3, 'step': 3},
+                            # 'ganglion': {'width': 7, 'start': 3, 'step': 3,
+                            #              'params': dir_g_cell_params},
                             'sample_from': 'cam',
                             'params': dir_cell_params,
                             'w2s': d_w2s,

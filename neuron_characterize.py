@@ -16,7 +16,17 @@ def remove_ticks(ax):
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
 
-
+exc_params = {
+    'cm': 0.25,  # nF
+    'i_offset': 0.0,
+    'tau_m': 7.,
+    'tau_refrac': 1.0,
+    'tau_syn_E': 1., #2
+    'tau_syn_I': 1., #4
+    'v_reset': -80.0,
+    'v_rest': -65.0,
+    'v_thresh': -55.4
+}
 test_exc = True if 1 else False
 neurons_per_core = 255
 

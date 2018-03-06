@@ -50,10 +50,10 @@ def cam_img_map(nrn_id, img_width, img_height):
     return row, col, up_dn
 
 
-def setup_cam_pop(sim, spike_array, img_w, img_h, ch_bits=0, w2s=W2S):
+def setup_cam_pop(sim, spike_array, img_w, img_h, ch_bits=1, w2s=W2S):
     row_bits = int(np.ceil(np.log2(img_h)))
     col_bits = int(np.ceil(np.log2(img_w)))
-    pop_size = (1 << (row_bits + col_bits + ch_bits))
+    pop_size = 1 << (row_bits + col_bits + ch_bits)
     cell = sim.IF_curr_exp
 
     dmy_pops = []

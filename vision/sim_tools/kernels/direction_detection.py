@@ -35,8 +35,8 @@ def direction_subsamp(width, dir_ang, weight, delay=1):
         krn = np.ones((1, width))*weight
         dly = np.ones((1, width))*delay
 
-    print(krn)
-    print(dly)
+    # print(krn)
+    # print(dly)
 
     return krn, dly
 
@@ -95,12 +95,12 @@ def direction_kernel(width, height, min_delay=1, weight=2.,
             dists[r, c] = dist
 
     # print(min_ang, dir_ang, max_ang)
-    print(weights)
-    print(delays)
+    # print(weights)
+    # print(delays)
     # print(np.round(15./angs))
     # print(np.round(1+angs/45.))
     # print(dists)
     # print(np.round(dists*1.5 + np.round(15./angs)))
     # import sys
     # sys.exit(0)
-    return weights, delays
+    return [weights, delays]
